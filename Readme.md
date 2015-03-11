@@ -15,6 +15,7 @@ _Pedro {Paredes, Ribeiro} - DCC/FCUP_
 
 ## Version Information
 FaSE Version 0.3 - Launched March 8 2014
+
 FaSE Version 0.4 - To be Launched
 
 ## Compilation and Usage
@@ -31,6 +32,7 @@ All commands:
     -h : Displays this help information
 	-s <Integer> : Subgraph Size
 	-i <Filename> : Name of input file (Format in Readme)
+	-it <Filename> : Name of precalc file
 	-d : Directed Subgraph (Default undirected)
 	-o : Name of output file (Default is stdout)
 	-dt : Detailed Result (Displays all subgraph types and occurrences)

@@ -65,7 +65,7 @@ void init()
 
 void displayHelp()
 {
-  printf("------------ FaSE Usage --------------\nMain Settings: ./FASE -s <Subgraph Size> -i <input file> [arguments...]\n\n\tAll commands:\n-h : Displays this help information\n-s <Integer> : Subgraph Size\n-i <Filename> : Name of input file (Format in Readme)\n-d : Directed Subgraph (Default undirected)\n-o : Name of output file (Default is stdout)\n-dt : Detailed Result (Displays all subgraph types and occurrences)\n-z : Use 0-based input (Suitable for input files starting at node 0)\n-tm : Use Adjacency Matrix LS-Labeling (Default is Adjacency List Labeling)\n-l : Use Adjacency List Only (Suitable for Large Scale or large networks [>10^5 nodes])\n-q : Ignore arguments and prompt input\n--------------------------------------\n\n---- More Info about running FaSE in the Readme file\n");
+  printf("------------ FaSE Usage --------------\nMain Settings: ./FASE -s <Subgraph Size> -i <input file> [arguments...]\n\n\tAll commands:\n-h : Displays this help information\n-s <Integer> : Subgraph Size\n-i <Filename> : Name of input file (Format in Readme)\n-it <Filename> : Name of precalc file\n-d : Directed Subgraph (Default undirected)\n-o : Name of output file (Default is stdout)\n-dt : Detailed Result (Displays all subgraph types and occurrences)\n-z : Use 0-based input (Suitable for input files starting at node 0)\n-tm : Use Adjacency Matrix LS-Labeling (Default is Adjacency List Labeling)\n-l : Use Adjacency List Only (Suitable for Large Scale or large networks [>10^5 nodes])\n-q : Ignore arguments and prompt input\n--------------------------------------\n\n---- More Info about running FaSE in the Readme file\n");
 }
 
 void read(int argc, char **argv)
