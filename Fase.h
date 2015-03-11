@@ -26,6 +26,7 @@ Base FaSE implementation
 #include "Graph.h"
 #include "LSLabeling.h"
 #include "GTrie.h"
+#include "GTrieGraphlet.h"
 #include "Isomorphism.h"
 #include "Random.h"
 
@@ -43,6 +44,8 @@ class Fase
   static short **extCpy;
   static char* LSLabel(int w, int subSize);
   static void ExtendSubgraph(int extNum, int subSize);
+  static void GraphletsExtendSubgraph(int extNum, int subSize, GTrieGraphlet *ggraphlet);
+  static void buildTreeExtend(int extNum, int subSize, GTrieGraphlet *ggraphlet);
 
  public:
   static int typeLabel;
@@ -55,6 +58,8 @@ class Fase
   static void listClasses(FILE* f);
   static void listTree(FILE* f);
   static void EnumerateSubgraphs(Graph *_G, int _K);
+  static void GraphletsCount(Graph *_G, int _K, GTrieGraphlet* ggraphlet);
+  static void buildTree(Graph *_G, int _K, GTrieGraphlet* ggraphlet);
 
 };
 

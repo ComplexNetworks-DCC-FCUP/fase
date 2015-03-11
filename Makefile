@@ -4,19 +4,20 @@ CC=g++
 # CFLAGS= -Wall -Wno-write-strings -O0 -g
 CFLAGS= -w -Wno-write-strings -O3 -g
 
-SRC =                   \
-	Fase.cpp 	\
-	LSLabeling.cpp	\
-	GTrie.cpp	\
-	Timer.cpp	\
-	GraphMatrix.cpp	\
-	GraphList.cpp	\
-	GraphUtils.cpp	\
-	Isomorphism.cpp	\
-	Random.cpp	\
-	nauty/nauty.c	\
-	nauty/nautil.c	\
-	nauty/naugraph.c \
+SRC =                   	\
+	Fase.cpp 		\
+	LSLabeling.cpp		\
+	GTrie.cpp		\
+	GTrieGraphlet.cpp	\
+	Timer.cpp		\
+	GraphMatrix.cpp		\
+	GraphList.cpp		\
+	GraphUtils.cpp		\
+	Isomorphism.cpp		\
+	Random.cpp		\
+	nauty/nauty.c		\
+	nauty/nautil.c		\
+	nauty/naugraph.c 	\
 	FaseMain.cpp
 
 OBJ =  ${SRC:.cpp=.o}

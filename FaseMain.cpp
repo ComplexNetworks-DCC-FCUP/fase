@@ -24,6 +24,7 @@ Main File For Testing
 #include "GraphList.h"
 #include "GraphUtils.h"
 #include "Fase.h"
+#include "GTrieGraphlet.h"
 #include "LSLabeling.h"
 #include "Timer.h"
 #include "Graph.h"
@@ -37,6 +38,8 @@ int K = 0;
 bool dir = false, detailed = false, draw = false;
 char ifilename [100];
 char ofilename [100];
+char tfilename [100];
+char buf[10000];
 FILE *outFile;
 time_t t_start, t_end;
 
@@ -96,11 +99,19 @@ void read(int argc, char **argv)
     if (argv[i][1] == 'z')
       zeroBased = 0;
 
-    if (argv[i][1] == 'i')
+    if (argv[i][1] == 'i' && argv[i][2] == '\0')
     {
       i++;
       strcpy(ifilename, argv[i]);
       check |= (1 << 0);
+      continue;
+    }
+
+    if (argv[i][1] == 'i' && argv[i][2] == 't')
+    {
+      i++;
+      strcpy(tfilename, argv[i]);
+      check |= (1 << 2);
       continue;
     }
 
@@ -135,7 +146,7 @@ void read(int argc, char **argv)
 
   if (!itera)
   {
-    if (check != (1 << 2) - 1)
+    if (check != (1 << 3) - 1)
     {
       K = 0;
       if (check != 0)
@@ -228,6 +239,44 @@ void output()
   }
 }
 
+void outputGraphlets(GTrieGraphlet* ggraphlet)
+{
+  printf("Finished Calculating\n");
+  FILE *f = outFile;
+  fprintf(f, "\tOutput:\n");
+  fprintf(f, "Network: %s\n", ifilename);
+  fprintf(f, "Directed: %s\n", dir ? "Yes" : "No");
+  fprintf(f, "Type: %s\n", Fase::typeLabel == LSLabeling::TYPE_PICK ? "List" : "Matrix");
+  fprintf(f, "Nodes: %d\n", G->numNodes());
+  fprintf(f, "Edges: %d\n", G->numEdges() / (dir ? 1 : 2));
+  fprintf(f, "Subgraph Size: %d\n", K);
+
+  t_end = time(0);
+  struct tm *tm_start = localtime(&t_start);
+  fprintf(f, "Start of Computation: %02dh%02dm%02ds %02d/%02d/%02d\n\
+", tm_start->tm_hour, tm_start->tm_min, tm_start->tm_sec, tm_start->tm_mday, tm_start->tm_mon+1, 1900+tm_start->tm_year);
+  struct tm *tm_end   = localtime(&t_end);
+  fprintf(f, "End of Computation: %02dh%02dm%02ds %02d/%02d/%02d\n", tm_end->tm_hour, tm_end->tm_min, tm_end->tm_sec, tm_end->tm_mday, tm_end->tm_mon+1, 1900+tm_end->tm_year);
+  
+  fprintf(f, "\n\n\tResults:\n");
+  fprintf(f, "Subgraph Occurrences: %lld\n", Fase::MotifCount);
+  fprintf(f, "Subgraph Types: %lld\n", ggraphlet->getCanonicalNumber());
+  fprintf(f, "G-Trie Leafs: %lld\n", ggraphlet->getClassNumber());
+  fprintf(f, "G-Trie Nodes: %lld\n", ggraphlet->getNodeNumber() + 1);
+  fprintf(f, "Computation Time (ms): %0.4lf\n", Timer::elapsed());
+      
+  if (detailed)
+  {
+    fprintf(f, "\n\n\tDetailed Output:\n");
+    ggraphlet->listClasses(f);
+  }
+  if (draw)
+  {
+    fprintf(f, "\n\n\tVisual G-Trie Output:\n");
+    ggraphlet->listGtrie(f, K);
+  }
+}
+
 void finish()
 {
   Fase::destroy();
@@ -243,14 +292,23 @@ int main(int argc, char **argv)
   if (K <= 2)
     return 0;
   initNauty();
-  timeval t1;
-  gettimeofday(&t1, NULL);
-  Random::init(t1.tv_usec * t1.tv_sec);
+  
   Timer::start();
+
   Fase::directed = dir;
-  Fase::EnumerateSubgraphs(G, K);
+  //Fase::EnumerateSubgraphs(G, K);
+
+  GTrieGraphlet* ggraphlet = new GTrieGraphlet();
+  FILE* treefile = fopen(tfilename, "r");
+  fscanf(treefile, "%s", buf);
+  ggraphlet->readTree(buf);
+  
+  Fase::GraphletsCount(G, K, ggraphlet);
+//  ggraphlet->listGtrie(stdout, K);
+
   Timer::stop();
-  output();
+  //output();
+  outputGraphlets(ggraphlet);
   finish();
 
   return 0;
