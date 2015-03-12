@@ -34,6 +34,7 @@ class GTrieGraphlet
   void init();
   void destroy();
   void insert(char* s, int ini);
+  void insertCensus(char* s, int ini);
   void setCanonicalLabel(char *s);
   void jump();
   long long int getCanonicalNumber();

@@ -117,18 +117,20 @@ void Fase::GraphletsExtendSubgraph(int extNum, int subSize, GTrieGraphlet *ggrap
       int k = 0;
 
       //int lab = 0;
+      bool *p = adjM[exti];
       for (int j = 0; j < subSize; j++)
-        if(adjM[exti][sub[j]])
+        if(p+sub[j])
           globStr[k++] = j + 1;
           //lab += (j + 1) * pow(10, k++);
       globStr[k] = 0;
-      //ggraphlet->insert(globStr, 1);
+
+      ggraphlet->insertCensus(globStr, 1);
       //ggraphlet->insert(LSLabel(exti, subSize), 1);
 
       sub[subSize] = exti;
       MotifCount++;
 
-      //ggraphlet->jump();
+      ggraphlet->jump();
     }
     return;
   }
@@ -161,9 +163,11 @@ void Fase::GraphletsExtendSubgraph(int extNum, int subSize, GTrieGraphlet *ggrap
     //
     int k = 0;
 
+    bool *p = adjM[exti];
     for (int j = 0; j < subSize; j++)
-      if(adjM[exti][sub[j]])
+      if(p+sub[j])
         globStr[k++] = j + 1;
+        //lab += (j + 1) * pow(10, k++);
     globStr[k] = 0;
     //ggraphlet->insert(globStr, 1);
     //ggraphlet->insert(LSLabel(exti, subSize), 1);

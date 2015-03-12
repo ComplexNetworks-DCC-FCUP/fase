@@ -130,6 +130,27 @@ void GTrieGraphlet::insert(char* s, int ini)
   }
 }
 
+void GTrieGraphlet::insertCensus(char* s, int ini)
+{
+    childTrie* temp = searchChild(current->childs, s);
+    if (temp->ref != NULL)
+    {
+      temp->ref->count += ini;
+      canCount[temp->ref->leaf] += ini;
+      current = temp->ref;
+    }
+    else
+    {
+      nodes++; printf("!%d\n", ini);
+      temp->ref = new GTrieGraphlet::trie();
+      temp->ref->parent = current;
+      temp->ref->childs = initChild();
+      temp->ref->count = ini;
+      temp->ref->leaf = 0;
+      current = temp->ref;
+    }
+}
+
 int GTrieGraphlet::searchLabel(labelTrie* node, char* s)
 {
   while (1)
