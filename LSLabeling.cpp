@@ -131,16 +131,42 @@ char* LSLabeling::DPickLabel(int *sub, int subSize, int w, char* label)
 char* LSLabeling::UPickLabel(int *sub, int subSize, int w, char* label)
 {
   int j, s = 0;
+
   for (j = 0; j < subSize; j++)
-    if (G->isConnected(w, sub[j]))
+    //if (G->isConnected(w, sub[j]))
+    if(G->adjacencyMatrix()[w][sub[j]])
       label[s++] = j + 1;
   label[s] = 0;
+
+
+  /*
+  char* a = &label[0];
+  for (j = 0; j < subSize; j++)
+    //if (G->isConnected(w, sub[j]))
+    if(G->adjacencyMatrix()[w][sub[j]])
+      *(a + s++) = j + 1;
+  *(a + s) = 0;
   return label;
+  */
+
+
+  /*bool *b = &(G->adjacencyMatrix()[w][0]);
+  for (j = 0; j < subSize; j++)
+    if ((*G->outEdges(w))[j] == *(b + sub[j]))
+      label[s++] = j + 1;
+  label[s] = 0;
+  return label;*/
+
+
+  /*bool *b = &adjM[i][0];
+  for (j=0; j<glk; j++)
+    if (out[j] != *(b+mymap[j]))*/
 }
 
 char* LSLabeling::Label(int *sub, int subSize, int w, int type, char* label, bool directed)
 {
-  if (directed)
+  return LSLabeling::UPickLabel(sub, subSize, w, label);
+  /*if (directed)
   {
     if (type == TYPE_PICK)
       return LSLabeling::DPickLabel(sub, subSize, w, label);
@@ -157,5 +183,5 @@ char* LSLabeling::Label(int *sub, int subSize, int w, int type, char* label, boo
       return LSLabeling::UMatrixLabel(sub, subSize, w, label);
     else
       return "";
-  }
+  }*/
 }

@@ -293,7 +293,7 @@ int main(int argc, char **argv)
     return 0;
   initNauty();
   
-  Timer::start();
+  //Timer::start();
 
   Fase::directed = dir;
   //Fase::EnumerateSubgraphs(G, K);
@@ -303,10 +303,13 @@ int main(int argc, char **argv)
   fscanf(treefile, "%s", buf);
   ggraphlet->readTree(buf);
   
+  Timer::start(); // time of census only
+
   Fase::GraphletsCount(G, K, ggraphlet);
 //  ggraphlet->listGtrie(stdout, K);
 
   Timer::stop();
+  printf("||Census Time (ms): %0.4lf||\n", Timer::elapsed());
   //output();
   outputGraphlets(ggraphlet);
   finish();

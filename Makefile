@@ -2,7 +2,8 @@ EXEC_NAME=FASE
 CC=g++
 
 # CFLAGS= -Wall -Wno-write-strings -O0 -g
-CFLAGS= -w -Wno-write-strings -O3 -g
+#CFLAGS= -w -Wno-write-strings -O3 -g
+CFLAGS= -w -Wno-write-strings -O3
 
 SRC =                   	\
 	Fase.cpp 		\

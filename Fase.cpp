@@ -75,176 +75,6 @@ void Fase::destroy()
   delete [] extCpy;
 }
 
-/*! List all k-subgraphs in a larger graph
-    \param G the graph to be explored
-    \param K the size of the subgraphs*/
-void Fase::EnumerateSubgraphs(Graph *_G, int _K)
-{
-  K = _K;
-  G = _G;
-  sub = new int[K];
-  graphSize = G->numNodes();
-  GTrie::init();
-  LSLabeling::init(G);
-  int i, j, extNum = 0;
-  extCpy = new short*[K];
-
-  for (i = 0; i < K; i++)
-    extCpy[i] = new short[graphSize];
-
-  for (i = 0; i < graphSize; i++)
-  {
-    sub[0] = i;
-    int *nei = G->arrayNeighbours(i);
-    int neiNum = G->numNeighbours(i);
-    extNum = 0;
-    for (j = 0; j < neiNum; j++)
-      if (nei[j] > i)
-        extCpy[0][extNum++] = nei[j];
-    ExtendSubgraph(extNum, 1);
-  }
-}
-
-/*! Generates the next node on the Fase-tree
-    \param ext the list of possible next chosen vertices
-    \param extNum the number of elements in ext
-    \param subSize the size of the enumerating subgraph
-    \param v the label of the base vertex*/
-void Fase::ExtendSubgraph(int extNum, int subSize)
-{
-  int i;
-
-  if (subSize == K - 1)
-  {
-    for (i = 0; i < extNum; i++)
-    {
-      int exti = extCpy[subSize - 1][i];
-      GTrie::insert(LSLabel(exti, subSize));
-      sub[subSize] = exti;
-      MotifCount++;
-
-      if (!GTrie::getCurrentLeaf())
-      {
-        s[0] = '\0';
-        Isomorphism::canonicalStrNauty(G, sub, s);
-        GTrie::setCanonicalLabel(s);
-      }
-
-      GTrie::jump();    
-    }
-    return;
-  }
-
-  int j, o;
-  int extCpyNum;
-  int exti, *eExcl, eExclNum;
-  
-  memcpy(extCpy[subSize], extCpy[subSize - 1], extNum * sizeof(short));
-
-  for (i = extNum - 1; i >= 0; i--)
-  {
-    extCpyNum = i;
-    exti = extCpy[subSize - 1][i];
-    eExcl = G->arrayNeighbours(exti);
-    eExclNum = G->numNeighbours(exti);
-
-    for (j = 0; j < eExclNum; j++)
-    {
-      int eEj = eExcl[j];
-      if (eEj <= sub[0])
-        continue;
-      for (o = 0; o < subSize; o++)
-        if (eEj == sub[o] || G->isConnected(eEj, sub[o]))
-          break;
-      if (o == subSize)
-        extCpy[subSize][extCpyNum++] = eEj;
-    }
-
-    GTrie::insert(LSLabel(exti, subSize));
-    sub[subSize] = exti;
-
-    ExtendSubgraph(extCpyNum, subSize + 1);
- 
-    GTrie::jump();
-  }
-}
-
-void Fase::buildTree(Graph *_G, int _K, GTrieGraphlet* ggraphlet)
-{
-  K = _K;
-  G = _G;
-  sub = new int[K];
-  graphSize = G->numNodes();
-  LSLabeling::init(G);
-  int i, j, extNum = 0;
-  extCpy = new short*[K];
-
-  for (i = 0; i < K; i++)
-    extCpy[i] = new short[graphSize];
-
-  for (i = 0; i < graphSize; i++)
-  {
-    sub[0] = i;
-    int *nei = G->arrayNeighbours(i);
-    int neiNum = G->numNeighbours(i);
-    extNum = 0;
-    for (j = 0; j < neiNum; j++)
-      if (nei[j] > i)
-        extCpy[0][extNum++] = nei[j];
-    GraphletsExtendSubgraph(extNum, 1, ggraphlet);
-  }
-}
-
-void Fase::buildTreeExtend(int extNum, int subSize, GTrieGraphlet *ggraphlet)
-{
-  int i;
-
-  if (subSize == K - 1)
-  {
-    for (i = 0; i < extNum; i++)
-    {
-      int exti = extCpy[subSize - 1][i];
-      ggraphlet->insert(LSLabel(exti, subSize), 1);
-      sub[subSize] = exti;
-      ggraphlet->jump();    
-    }
-    return;
-  }
-
-  int j, o;
-  int extCpyNum;
-  int exti, *eExcl, eExclNum;
-  
-  memcpy(extCpy[subSize], extCpy[subSize - 1], extNum * sizeof(short));
-
-  for (i = extNum - 1; i >= 0; i--)
-  {
-    extCpyNum = i;
-    exti = extCpy[subSize - 1][i];
-    eExcl = G->arrayNeighbours(exti);
-    eExclNum = G->numNeighbours(exti);
-
-    for (j = 0; j < eExclNum; j++)
-    {
-      int eEj = eExcl[j];
-      if (eEj <= sub[0])
-        continue;
-      for (o = 0; o < subSize; o++)
-        if (eEj == sub[o] || G->isConnected(eEj, sub[o]))
-          break;
-      if (o == subSize)
-        extCpy[subSize][extCpyNum++] = eEj;
-    }
-
-    ggraphlet->insert(LSLabel(exti, subSize), 1);
-    sub[subSize] = exti;
-
-    buildTreeExtend(extCpyNum, subSize + 1, ggraphlet);
- 
-    ggraphlet->jump();
-  }
-}
-
 void Fase::GraphletsCount(Graph *_G, int _K, GTrieGraphlet* ggraphlet)
 {
   K = _K;
@@ -275,23 +105,30 @@ void Fase::GraphletsExtendSubgraph(int extNum, int subSize, GTrieGraphlet *ggrap
 {
   int i;
 
+  bool** adjM = G->adjacencyMatrix();
+
   if (subSize == K - 1)
   {
     for (i = 0; i < extNum; i++)
     {
       int exti = extCpy[subSize - 1][i];
-      ggraphlet->insert(LSLabel(exti, subSize), 1);
+
+      //
+      int k = 0;
+
+      //int lab = 0;
+      for (int j = 0; j < subSize; j++)
+        if(adjM[exti][sub[j]])
+          globStr[k++] = j + 1;
+          //lab += (j + 1) * pow(10, k++);
+      globStr[k] = 0;
+      //ggraphlet->insert(globStr, 1);
+      //ggraphlet->insert(LSLabel(exti, subSize), 1);
+
       sub[subSize] = exti;
       MotifCount++;
 
-      /*if (!GTrie::getCurrentLeaf())
-      {
-        s[0] = '\0';
-        Isomorphism::canonicalStrNauty(G, sub, s);
-        GTrie::setCanonicalLabel(s);
-      }*/
-
-      ggraphlet->jump();    
+      //ggraphlet->jump();
     }
     return;
   }
@@ -321,11 +158,20 @@ void Fase::GraphletsExtendSubgraph(int extNum, int subSize, GTrieGraphlet *ggrap
         extCpy[subSize][extCpyNum++] = eEj;
     }
 
-    ggraphlet->insert(LSLabel(exti, subSize), 1);
+    //
+    int k = 0;
+
+    for (int j = 0; j < subSize; j++)
+      if(adjM[exti][sub[j]])
+        globStr[k++] = j + 1;
+    globStr[k] = 0;
+    //ggraphlet->insert(globStr, 1);
+    //ggraphlet->insert(LSLabel(exti, subSize), 1);
+
     sub[subSize] = exti;
 
     GraphletsExtendSubgraph(extCpyNum, subSize + 1, ggraphlet);
  
-    ggraphlet->jump();
+    //ggraphlet->jump();
   }
 }
