@@ -24,9 +24,7 @@ Base FaSE implementation
 
 #include "Common.h"
 #include "Graph.h"
-#include "LSLabeling.h"
 #include "GTrie.h"
-#include "GTrieGraphlet.h"
 #include "Isomorphism.h"
 #include "Random.h"
 
@@ -54,7 +52,10 @@ class Fase
   static bool directed;
   static int cliqueCount;
   static long long int count[50];
-  static int type[150];
+  static int type[MAXGRAPHS];
+
+  static int graphlets[30];
+  static int orbits[73];
 
   static long long int getTypes();
   static long long int getLeafs();

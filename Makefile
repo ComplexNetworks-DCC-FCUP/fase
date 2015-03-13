@@ -7,10 +7,8 @@ CFLAGS= -w -Wno-write-strings -O3
 
 SRC =                   	\
 	Fase.cpp 		\
-	LSLabeling.cpp		\
-	GTrie.cpp		\
-	GTrieGraphlet.cpp	\
 	Timer.cpp		\
+	GTrie.cpp		\
 	GraphMatrix.cpp		\
 	GraphList.cpp		\
 	GraphUtils.cpp		\

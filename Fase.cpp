@@ -33,9 +33,30 @@ short **Fase::extCpy;
 char Fase::globStr[MAXS];
 char Fase::s[20 * 20 + 1];
 long long int Fase::count[50];
-int Fase::type[150];
+int Fase::type[MAXGRAPHS];
 int Fase::clique[6] = {0, 0, 1, 3, 31, 511};
 int Fase::cliqueCount;
+
+/*David*/
+//int types[MAXGRAPHS];
+int Fase::graphlets[30];
+int Fase::orbits[73];
+int mapLabelToGraph[32] = {-1, -1,-1,-1,-1,-1,-1,-1,-1, 1,-1,
+                            2, 7, 4,-1, 3,-1,15,19,16,21,
+                           18,20,17,-1, 8,-1, 9,14,11,-1,
+                           10};
+
+int mapGraphToGraphlet[22] = {-1, 4, 6, 7, 6,-1,-1, 3, 6, 7, 8,
+                           7,-1,-1, 6, 3, 6, 7, 5, 4, 6,
+                           3};
+
+int mapGraphletToOrbits[22][4] = {{-1,-1,-1,-1},{7,6,6,6}, {11,10,9,10}, {13,12,12,13}, {11,9,10,10}, {-1,-1,-1,-1}, {-1,-1,-1,-1}, {5,4,5,4},
+                                  {11,10,10,9}, {13,13,12,12}, {14,14,14,14}, {13,12,13,12}, {-1,-1,-1,-1}, {-1,-1,-1,-1}, {10,10,11,9},
+                                  {5,5,4,4}, {10,11,9,10}, {12,13,12,13}, {8,8,8,8}, {6,7,6,6},
+                                  {11,9,10,10}, {4,5,5,4}};
+
+FILE* typeFile;
+/*David*/
 
 long long int Fase::getTypes()
 {
@@ -62,13 +83,6 @@ void Fase::listClasses(FILE* f)
   return GTrie::listClasses(f);
 }
 
-/*! Generate the next piece of the LSLabel
-    \param w the newly added vertex*/
-char* Fase::LSLabel(int w, int subSize)
-{
-  return LSLabeling::Label(sub, subSize, w, typeLabel, globStr, directed);
-}
-
 void Fase::destroy()
 {
   int i;
@@ -85,7 +99,6 @@ void Fase::GraphletsCount(Graph *_G, int _K)
   G = _G;
   sub = new int[K];
   graphSize = G->numNodes();
-  LSLabeling::init(G);
   cliqueCount = 0;
   memset(count, 0, sizeof count);
   memset(type, 0, sizeof type);
@@ -94,6 +107,11 @@ void Fase::GraphletsCount(Graph *_G, int _K)
 
   for (i = 0; i < K; i++)
     extCpy[i] = new short[graphSize];
+
+  /*David*/
+  //memset(types, 0, sizeof types);
+  //typeFile = fopen("types.txt", "w");
+  /*David*/
 
   for (i = 0; i < graphSize; i++)
   {
@@ -106,15 +124,19 @@ void Fase::GraphletsCount(Graph *_G, int _K)
         extCpy[0][extNum++] = nei[j];
     GraphletsExtendSubgraph(extNum, 1, 0);
   }
+
+  /*David*/
+  //fclose(typeFile);
+  /*David*/
 }
 
 void Fase::GraphletsExtendSubgraph(int extNum, int subSize, int node)
 {
-  int i;
+  int i, graph;
 
   bool** adjM = G->adjacencyMatrix();
 
-  if (subSize == K - 2)
+  if (subSize == K - 1)
   {
     for (i = 0; i < extNum; i++)
     {
@@ -126,7 +148,16 @@ void Fase::GraphletsExtendSubgraph(int extNum, int subSize, int node)
         nm += ((int)(*(p + sub[j])) << j);
 
 //      count[type[(node << subSize) + nm]]++;
-      type[(node << subSize) + nm]++;
+      int myType = (node << subSize) + nm;
+      type[myType]++;
+
+      /*printf("Here!\n");
+      printf("mytype   : %d\n", myType);
+      printf("graph    : %d\n", mapLabelToGraph[myType]);
+      printf("graphlet : %d\n", mapGraphToGraphlet[mapLabelToGraph[myType]]);
+
+      exit(0);*/
+
       
 /*    Calculo Clique-K
   
@@ -150,6 +181,25 @@ void Fase::GraphletsExtendSubgraph(int extNum, int subSize, int node)
       
       sub[subSize] = exti;
       MotifCount++;
+
+      graph = mapLabelToGraph[myType];
+      graphlets[mapGraphToGraphlet[graph]]++;
+      for(int k = 0; k <= subSize; k++)
+        orbits[mapGraphletToOrbits[graph][k]]++;
+
+      /*if(types[myType] == 0){
+        for(int k = 0; k <= subSize; k++)
+            fprintf(typeFile, "%d ", sub[k]+1);
+        fprintf(typeFile, "\n");
+        fprintf(typeFile, "Type %d: [\n\t  ", myType);
+        for (int j = 0; j <= subSize; j++){
+          for (int k = 0; k <= subSize; k++)
+            fprintf(typeFile, "%d, ", adjM[sub[j]][sub[k]]);
+          fprintf(typeFile, "\n\t  ");
+        }
+        fprintf(typeFile, "]\n");
+        types[myType] = 1;
+      }*/
     }
     return;
   }

@@ -45,6 +45,9 @@ Common file, contains libraries for all files
 
 #define MAXMAT 10000
 
+// Graphlets
+#define MAXGRAPHS 150
+
 using namespace std;
 
 #endif

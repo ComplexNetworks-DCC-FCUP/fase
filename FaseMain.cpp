@@ -24,8 +24,6 @@ Main File For Testing
 #include "GraphList.h"
 #include "GraphUtils.h"
 #include "Fase.h"
-#include "GTrieGraphlet.h"
-#include "LSLabeling.h"
 #include "Timer.h"
 #include "Graph.h"
 #include "Isomorphism.h"
@@ -73,7 +71,6 @@ void read(int argc, char **argv)
   int zeroBased = 1;
   ofilename[0] = '0';
   ofilename[1] = '\0';
-  Fase::typeLabel = LSLabeling::TYPE_PICK;
   G = new GraphMatrix();
   for (i = 1; i < argc; i++)
   {
@@ -91,8 +88,6 @@ void read(int argc, char **argv)
       draw = true;
     else if (argv[i][1] == 'd')
       dir = true;
-    if (argv[i][1] == 't' && argv[i][2] == 'm')
-      Fase::typeLabel = LSLabeling::TYPE_MATRIX;
     if (argv[i][1] == 'l')
       G = new GraphList();
     if (argv[i][1] == 'z')
@@ -113,9 +108,9 @@ void read(int argc, char **argv)
       int j = 1;
       while (argv[i][j] != '\0')
       {
-	K *= 10;
-	K += argv[i][j] - '0';
-	j++;
+    K *= 10;
+    K += argv[i][j] - '0';
+    j++;
       }
       check |= (1 << 1);
       continue;
@@ -141,7 +136,7 @@ void read(int argc, char **argv)
     {
       K = 0;
       if (check != 0)
-	printf("Warning: Incorrect number of necessary arguments provided\n");
+    printf("Warning: Incorrect number of necessary arguments provided\n");
       displayHelp();
       return;
     }
@@ -192,44 +187,6 @@ void finishNauty()
   Isomorphism::finishNauty();
 }
 
-void output()
-{
-  printf("Finished Calculating\n");
-  FILE *f = outFile;
-  fprintf(f, "\tOutput:\n");
-  fprintf(f, "Network: %s\n", ifilename);
-  fprintf(f, "Directed: %s\n", dir ? "Yes" : "No");
-  fprintf(f, "Type: %s\n", Fase::typeLabel == LSLabeling::TYPE_PICK ? "List" : "Matrix");
-  fprintf(f, "Nodes: %d\n", G->numNodes());
-  fprintf(f, "Edges: %d\n", G->numEdges() / (dir ? 1 : 2));
-  fprintf(f, "Subgraph Size: %d\n", K);
-
-  t_end = time(0);
-  struct tm *tm_start = localtime(&t_start);
-  fprintf(f, "Start of Computation: %02dh%02dm%02ds %02d/%02d/%02d\n\
-", tm_start->tm_hour, tm_start->tm_min, tm_start->tm_sec, tm_start->tm_mday, tm_start->tm_mon+1, 1900+tm_start->tm_year);
-  struct tm *tm_end   = localtime(&t_end);
-  fprintf(f, "End of Computation: %02dh%02dm%02ds %02d/%02d/%02d\n", tm_end->tm_hour, tm_end->tm_min, tm_end->tm_sec, tm_end->tm_mday, tm_end->tm_mon+1, 1900+tm_end->tm_year);
-  
-  fprintf(f, "\n\n\tResults:\n");
-  fprintf(f, "Subgraph Occurrences: %lld\n", Fase::MotifCount);
-  fprintf(f, "Subgraph Types: %lld\n", Fase::getTypes());
-  fprintf(f, "G-Trie Leafs: %lld\n", Fase::getLeafs());
-  fprintf(f, "G-Trie Nodes: %lld\n", Fase::getNodes() + 1);
-  fprintf(f, "Computation Time (ms): %0.4lf\n", Timer::elapsed());
-      
-  if (detailed)
-  {
-    fprintf(f, "\n\n\tDetailed Output:\n");
-    Fase::listClasses(f);
-  }
-  if (draw)
-  {
-    fprintf(f, "\n\n\tVisual G-Trie Output:\n");
-    Fase::listTree(f);
-  }
-}
-
 void outputGraphlets()
 {
   printf("Finished Calculating\n");
@@ -255,9 +212,15 @@ void outputGraphlets()
   fprintf(f, "Computation Time (ms): %0.4lf\n", Timer::elapsed());
   fprintf(f, "\n");
 
-  for (int i = 0; i < 150; i++)
+  for (int i = 0; i < MAXGRAPHS; i++)
     if (Fase::type[i])
       fprintf(f, "Subgraph %d: %lld\n", i, Fase::type[i]);
+
+  for (int i = 0; i <= 29; i++)
+      printf("Graphlets %d: %lld\n", i, Fase::graphlets[i]);
+
+  for (int i = 0; i <= 72; i++)
+      printf("Orbits %d: %lld\n", i, Fase::orbits[i]);
 }
 
 void finish()

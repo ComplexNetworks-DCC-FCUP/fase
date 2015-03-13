@@ -81,12 +81,8 @@ GraphUtils.cpp
 GraphUtils.h
 GTrie.cpp
 GTrie.h
-GTrieGraphlet.cpp
-GTrieGraphlet.h
 Isomorphism.cpp
 Isomorphism.h
-LSLabeling.cpp
-LSLabeling.h
 Random.cpp
 Random.h
 Timer.cpp
