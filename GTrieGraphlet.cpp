@@ -38,7 +38,7 @@ struct GTrieGraphlet::childTrie
 struct GTrieGraphlet::trie
 {
   trie* parent;
-  childTrie* childs;
+  trie* childs[10];
   int leaf;
   long long int count;
 };
@@ -61,7 +61,6 @@ void GTrieGraphlet::init()
   labelRoot->parent = NULL;
   current = new GTrieGraphlet::trie();
   current->parent = NULL;
-  current->childs = initChild();
   current->count = 0;
 }
 
@@ -93,62 +92,24 @@ long long int GTrieGraphlet::getClassNumber()
   return count;
 }
 
-GTrieGraphlet::childTrie* GTrieGraphlet::searchChild(childTrie* node, char* s)
+void GTrieGraphlet::insert(int s)
 {
-  while (1)
-  {
-    if (*s == '\0')
-      return node;
-    
-    if (node->list[*s] == NULL)
-      node->list[*s] = initChild();
-    node = node->list[*s];
-    s++;
-  }
-
-  return NULL;
+  nodes++;
+  trie* temp = new trie();
+  temp->parent = current;
+  temp->count = 0;
+  temp->leaf = 0;
+  current->childs[s] = temp;
+  current = temp;
 }
 
-void GTrieGraphlet::insert(char* s, int ini)
+void GTrieGraphlet::insertCensus(int s)
 {
-  childTrie* temp = searchChild(current->childs, s);
-  if (temp->ref != NULL)
-  {
-    temp->ref->count += ini;
-    canCount[temp->ref->leaf] += ini;
-    current = temp->ref;
-  }
-  else
-  {
-    nodes++;
-    temp->ref = new GTrieGraphlet::trie();
-    temp->ref->parent = current;
-    temp->ref->childs = initChild();
-    temp->ref->count = ini;
-    temp->ref->leaf = 0;
-    current = temp->ref;
-  }
-}
-
-void GTrieGraphlet::insertCensus(char* s, int ini)
-{
-    childTrie* temp = searchChild(current->childs, s);
-    if (temp->ref != NULL)
-    {
-      temp->ref->count += ini;
-      canCount[temp->ref->leaf] += ini;
-      current = temp->ref;
-    }
-    else
-    {
-      nodes++; printf("!%d\n", ini);
-      temp->ref = new GTrieGraphlet::trie();
-      temp->ref->parent = current;
-      temp->ref->childs = initChild();
-      temp->ref->count = ini;
-      temp->ref->leaf = 0;
-      current = temp->ref;
-    }
+  trie* temp = current->childs[s];
+  
+  temp->count++;
+  canCount[temp->leaf]++;
+  current = temp;
 }
 
 int GTrieGraphlet::searchLabel(labelTrie* node, char* s)
@@ -219,7 +180,7 @@ char* GTrieGraphlet::getLabel(int key)
 
 void GTrieGraphlet::printGtrie(childTrie *node, char* label, int sz, int k, int prev)
 {
-  if (node->ref != NULL)
+/*  if (node->ref != NULL)
   {
     label[sz] = '\0';
     fprintf(f, "+%s", label + prev);
@@ -236,7 +197,7 @@ void GTrieGraphlet::printGtrie(childTrie *node, char* label, int sz, int k, int 
     label[sz] = i + '0' - 1;
     if (node->list[i] != NULL)
       printGtrie(node->list[i], label, sz + 1, k, prev);
-  }
+      }*/
 }
 
 void GTrieGraphlet::listGtrie(FILE* out, int k)
@@ -247,7 +208,7 @@ void GTrieGraphlet::listGtrie(FILE* out, int k)
     jump();
   char tmpStr[MAXS];
   tmpStr[0] = '\0';
-  printGtrie(current->childs, tmpStr, 0, k - 1, 0);
+  //printGtrie(current->childs, tmpStr, 0, k - 1, 0);
   fprintf(f, "\ndone\n");
 }
 
@@ -285,19 +246,17 @@ void GTrieGraphlet::readTree(char* rep)
   destroy();
   init();
 
-  char buf[200];
   int i;
   for (i = 0; rep[i]; i++)
   {
     if (rep[i] == '+')
     {
-      int sz = 0;
+      int sz = 0, nm = 0;
       while (rep[++i] >= '0')
-        buf[sz++] = rep[i] - '0' + 1;
-      buf[sz] = '\0';
+        nm += (1 << (rep[i] - '0'));
       i--;
       
-      insert(buf, 0);
+      insert(nm);
     }
     else if (rep[i] == '-')
       jump();

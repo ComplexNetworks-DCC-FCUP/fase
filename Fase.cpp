@@ -32,6 +32,10 @@ int Fase::graphSize;
 short **Fase::extCpy;
 char Fase::globStr[MAXS];
 char Fase::s[20 * 20 + 1];
+long long int Fase::count[50];
+int Fase::type[150];
+int Fase::clique[6] = {0, 0, 1, 3, 31, 511};
+int Fase::cliqueCount;
 
 long long int Fase::getTypes()
 {
@@ -75,13 +79,16 @@ void Fase::destroy()
   delete [] extCpy;
 }
 
-void Fase::GraphletsCount(Graph *_G, int _K, GTrieGraphlet* ggraphlet)
+void Fase::GraphletsCount(Graph *_G, int _K)
 {
   K = _K;
   G = _G;
   sub = new int[K];
   graphSize = G->numNodes();
   LSLabeling::init(G);
+  cliqueCount = 0;
+  memset(count, 0, sizeof count);
+  memset(type, 0, sizeof type);
   int i, j, extNum = 0;
   extCpy = new short*[K];
 
@@ -97,40 +104,52 @@ void Fase::GraphletsCount(Graph *_G, int _K, GTrieGraphlet* ggraphlet)
     for (j = 0; j < neiNum; j++)
       if (nei[j] > i)
         extCpy[0][extNum++] = nei[j];
-    GraphletsExtendSubgraph(extNum, 1, ggraphlet);
+    GraphletsExtendSubgraph(extNum, 1, 0);
   }
 }
 
-void Fase::GraphletsExtendSubgraph(int extNum, int subSize, GTrieGraphlet *ggraphlet)
+void Fase::GraphletsExtendSubgraph(int extNum, int subSize, int node)
 {
   int i;
 
   bool** adjM = G->adjacencyMatrix();
 
-  if (subSize == K - 1)
+  if (subSize == K - 2)
   {
     for (i = 0; i < extNum; i++)
     {
       int exti = extCpy[subSize - 1][i];
 
-      //
-      int k = 0;
-
-      //int lab = 0;
+      int nm = 0;
       bool *p = adjM[exti];
       for (int j = 0; j < subSize; j++)
-        if(p+sub[j])
-          globStr[k++] = j + 1;
-          //lab += (j + 1) * pow(10, k++);
-      globStr[k] = 0;
+        nm += ((int)(*(p + sub[j])) << j);
 
-      ggraphlet->insertCensus(globStr, 1);
-      //ggraphlet->insert(LSLabel(exti, subSize), 1);
+//      count[type[(node << subSize) + nm]]++;
+      type[(node << subSize) + nm]++;
+      
+/*    Calculo Clique-K
+  
+      if ((node << subSize) + nm == clique[K - 1])
+      {
+        int *eExcl = G->arrayNeighbours(exti);
+        int eExclNum = G->numNeighbours(exti);
+        for (int j = 0; j < eExclNum; j++)
+        {
+          int eEj = eExcl[j];
+          
+          bool *p = adjM[eEj];
+          int fl = 1;
+          for (int l = 0; fl && l < subSize; l++)
+            fl &= ((sub[l] >= eEj) & (int)*(p + sub[l]));
 
+          cliqueCount += fl;
+        }
+      }
+*/
+      
       sub[subSize] = exti;
       MotifCount++;
-
-      ggraphlet->jump();
     }
     return;
   }
@@ -160,22 +179,17 @@ void Fase::GraphletsExtendSubgraph(int extNum, int subSize, GTrieGraphlet *ggrap
         extCpy[subSize][extCpyNum++] = eEj;
     }
 
-    //
-    int k = 0;
+    int nm = 0;
 
-    bool *p = adjM[exti];
-    for (int j = 0; j < subSize; j++)
-      if(p+sub[j])
-        globStr[k++] = j + 1;
-        //lab += (j + 1) * pow(10, k++);
-    globStr[k] = 0;
-    //ggraphlet->insert(globStr, 1);
-    //ggraphlet->insert(LSLabel(exti, subSize), 1);
+    if (subSize >= 2)
+    {
+      bool *p = adjM[exti];
+      for (int j = 0; j < subSize; j++)
+        nm += ((int)(*(p + sub[j])) << j);
+    }
 
     sub[subSize] = exti;
 
-    GraphletsExtendSubgraph(extCpyNum, subSize + 1, ggraphlet);
- 
-    //ggraphlet->jump();
+    GraphletsExtendSubgraph(extCpyNum, subSize + 1, (node << subSize) + nm);
   }
 }

@@ -42,15 +42,20 @@ class Fase
   static char globStr[MAXS];
   static char s[20 * 20 + 1];
   static short **extCpy;
+  static int clique[6];
+
   static char* LSLabel(int w, int subSize);
   static void ExtendSubgraph(int extNum, int subSize);
-  static void GraphletsExtendSubgraph(int extNum, int subSize, GTrieGraphlet *ggraphlet);
-  static void buildTreeExtend(int extNum, int subSize, GTrieGraphlet *ggraphlet);
+  static void GraphletsExtendSubgraph(int extNum, int subSize, int node);
 
  public:
   static int typeLabel;
   static long long int MotifCount;
   static bool directed;
+  static int cliqueCount;
+  static long long int count[50];
+  static int type[150];
+
   static long long int getTypes();
   static long long int getLeafs();
   static long long int getNodes();
@@ -58,8 +63,7 @@ class Fase
   static void listClasses(FILE* f);
   static void listTree(FILE* f);
   static void EnumerateSubgraphs(Graph *_G, int _K);
-  static void GraphletsCount(Graph *_G, int _K, GTrieGraphlet* ggraphlet);
-  static void buildTree(Graph *_G, int _K, GTrieGraphlet* ggraphlet);
+  static void GraphletsCount(Graph *_G, int _K);
 
 };
 

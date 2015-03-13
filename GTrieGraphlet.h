@@ -33,8 +33,8 @@ class GTrieGraphlet
 
   void init();
   void destroy();
-  void insert(char* s, int ini);
-  void insertCensus(char* s, int ini);
+  void insert(int s);
+  void insertCensus(int s);
   void setCanonicalLabel(char *s);
   void jump();
   long long int getCanonicalNumber();
@@ -63,7 +63,6 @@ class GTrieGraphlet
   void printGtrie(childTrie *node, char* label, int sz, int k, int prev);
   void augment();
   childTrie* initChild();
-  childTrie* searchChild(childTrie* node, char* s);
   int searchLabel(labelTrie* node, char* s);
   char* getLabel(int key);
 };

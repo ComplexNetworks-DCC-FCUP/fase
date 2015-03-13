@@ -38,7 +38,6 @@ int K = 0;
 bool dir = false, detailed = false, draw = false;
 char ifilename [100];
 char ofilename [100];
-char tfilename [100];
 char buf[10000];
 FILE *outFile;
 time_t t_start, t_end;
@@ -65,7 +64,7 @@ void init()
 
 void displayHelp()
 {
-  printf("------------ FaSE Usage --------------\nMain Settings: ./FASE -s <Subgraph Size> -i <input file> [arguments...]\n\n\tAll commands:\n-h : Displays this help information\n-s <Integer> : Subgraph Size\n-i <Filename> : Name of input file (Format in Readme)\n-it <Filename> : Name of precalc file\n-d : Directed Subgraph (Default undirected)\n-o : Name of output file (Default is stdout)\n-dt : Detailed Result (Displays all subgraph types and occurrences)\n-z : Use 0-based input (Suitable for input files starting at node 0)\n-tm : Use Adjacency Matrix LS-Labeling (Default is Adjacency List Labeling)\n-l : Use Adjacency List Only (Suitable for Large Scale or large networks [>10^5 nodes])\n-q : Ignore arguments and prompt input\n--------------------------------------\n\n---- More Info about running FaSE in the Readme file\n");
+  printf("------------ FaSE Usage --------------\nMain Settings: ./FASE -s <Subgraph Size> -i <input file> [arguments...]\n\n\tAll commands:\n-h : Displays this help information\n-s <Integer> : Subgraph Size\n-i <Filename> : Name of input file (Format in Readme)\n-d : Directed Subgraph (Default undirected)\n-o : Name of output file (Default is stdout)\n-dt : Detailed Result (Displays all subgraph types and occurrences)\n-z : Use 0-based input (Suitable for input files starting at node 0)\n-tm : Use Adjacency Matrix LS-Labeling (Default is Adjacency List Labeling)\n-l : Use Adjacency List Only (Suitable for Large Scale or large networks [>10^5 nodes])\n-q : Ignore arguments and prompt input\n--------------------------------------\n\n---- More Info about running FaSE in the Readme file\n");
 }
 
 void read(int argc, char **argv)
@@ -107,14 +106,6 @@ void read(int argc, char **argv)
       continue;
     }
 
-    if (argv[i][1] == 'i' && argv[i][2] == 't')
-    {
-      i++;
-      strcpy(tfilename, argv[i]);
-      check |= (1 << 2);
-      continue;
-    }
-
     if (argv[i][1] == 's')
     {
       i++;
@@ -146,7 +137,7 @@ void read(int argc, char **argv)
 
   if (!itera)
   {
-    if (check != (1 << 3) - 1)
+    if (check != (1 << 2) - 1)
     {
       K = 0;
       if (check != 0)
@@ -239,14 +230,13 @@ void output()
   }
 }
 
-void outputGraphlets(GTrieGraphlet* ggraphlet)
+void outputGraphlets()
 {
   printf("Finished Calculating\n");
   FILE *f = outFile;
   fprintf(f, "\tOutput:\n");
   fprintf(f, "Network: %s\n", ifilename);
   fprintf(f, "Directed: %s\n", dir ? "Yes" : "No");
-  fprintf(f, "Type: %s\n", Fase::typeLabel == LSLabeling::TYPE_PICK ? "List" : "Matrix");
   fprintf(f, "Nodes: %d\n", G->numNodes());
   fprintf(f, "Edges: %d\n", G->numEdges() / (dir ? 1 : 2));
   fprintf(f, "Subgraph Size: %d\n", K);
@@ -260,21 +250,14 @@ void outputGraphlets(GTrieGraphlet* ggraphlet)
   
   fprintf(f, "\n\n\tResults:\n");
   fprintf(f, "Subgraph Occurrences: %lld\n", Fase::MotifCount);
-  fprintf(f, "Subgraph Types: %lld\n", ggraphlet->getCanonicalNumber());
-  fprintf(f, "G-Trie Leafs: %lld\n", ggraphlet->getClassNumber());
-  fprintf(f, "G-Trie Nodes: %lld\n", ggraphlet->getNodeNumber() + 1);
+  fprintf(f, "Clique-%d Occurrences: %lld\n", K, Fase::cliqueCount);
+//  fprintf(f, "Subgraph Types: %lld\n", Fase::getTypes());
   fprintf(f, "Computation Time (ms): %0.4lf\n", Timer::elapsed());
-      
-  if (detailed)
-  {
-    fprintf(f, "\n\n\tDetailed Output:\n");
-    ggraphlet->listClasses(f);
-  }
-  if (draw)
-  {
-    fprintf(f, "\n\n\tVisual G-Trie Output:\n");
-    ggraphlet->listGtrie(f, K);
-  }
+  fprintf(f, "\n");
+
+  for (int i = 0; i < 150; i++)
+    if (Fase::type[i])
+      fprintf(f, "Subgraph %d: %lld\n", i, Fase::type[i]);
 }
 
 void finish()
@@ -296,22 +279,14 @@ int main(int argc, char **argv)
   //Timer::start();
 
   Fase::directed = dir;
-  //Fase::EnumerateSubgraphs(G, K);
+  Timer::start();
 
-  GTrieGraphlet* ggraphlet = new GTrieGraphlet();
-  FILE* treefile = fopen(tfilename, "r");
-  fscanf(treefile, "%s", buf);
-  ggraphlet->readTree(buf);
-  
-  Timer::start(); // time of census only
-
-  Fase::GraphletsCount(G, K, ggraphlet);
-//  ggraphlet->listGtrie(stdout, K);
+  Fase::GraphletsCount(G, K);
 
   Timer::stop();
-  printf("||Census Time (ms): %0.4lf||\n", Timer::elapsed());
+  outputGraphlets();
   //output();
-  outputGraphlets(ggraphlet);
+  
   finish();
 
   return 0;
