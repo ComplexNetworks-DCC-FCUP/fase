@@ -189,7 +189,13 @@ void finishNauty()
 
 void outputGraphlets()
 {
-  printf("Finished Calculating\n");
+    /*for (int i = 0; i <= 29; i++)
+        printf("Graphlets %d: %lld\n", i, Fase::graphlets[i]);*/
+
+    for (int i = 0; i <= 72; i++)
+        printf("Orbits %lld: %lld\n", i, Fase::orbits[i]);
+
+  /*printf("Finished Calculating\n");
   FILE *f = outFile;
   fprintf(f, "\tOutput:\n");
   fprintf(f, "Network: %s\n", ifilename);
@@ -212,15 +218,11 @@ void outputGraphlets()
   fprintf(f, "Computation Time (ms): %0.4lf\n", Timer::elapsed());
   fprintf(f, "\n");
 
-  for (int i = 0; i < MAXGRAPHS; i++)
-    if (Fase::type[i])
-      fprintf(f, "Subgraph %d: %lld\n", i, Fase::type[i]);
+  //for (int i = 0; i < MAXGRAPHS; i++)
+    //if (Fase::type[i])
+      //fprintf(f, "Subgraph %d: %lld\n", i, Fase::type[i]);
 
-  for (int i = 0; i <= 29; i++)
-      printf("Graphlets %d: %lld\n", i, Fase::graphlets[i]);
-
-  for (int i = 0; i <= 72; i++)
-      printf("Orbits %d: %lld\n", i, Fase::orbits[i]);
+*/
 }
 
 void finish()

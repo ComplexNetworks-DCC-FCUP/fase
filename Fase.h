@@ -55,7 +55,7 @@ class Fase
   static int type[MAXGRAPHS];
 
   static int graphlets[30];
-  static int orbits[73];
+  static long long int orbits[73];
 
   static long long int getTypes();
   static long long int getLeafs();
@@ -66,6 +66,10 @@ class Fase
   static void EnumerateSubgraphs(Graph *_G, int _K);
   static void GraphletsCount(Graph *_G, int _K);
 
+  static void calcGraphletFrequency();
+  static void calcOrbitFrequency();
+  static void solveEquations();
+  static void buildCommonNodes();
 };
 
 #endif

@@ -3,7 +3,7 @@ CC=g++
 
 # CFLAGS= -Wall -Wno-write-strings -O0 -g
 #CFLAGS= -w -Wno-write-strings -O3 -g
-CFLAGS= -w -Wno-write-strings -O3
+CFLAGS= -w -Wno-write-strings -O3 -std=c++11
 
 SRC =                   	\
 	Fase.cpp 		\
