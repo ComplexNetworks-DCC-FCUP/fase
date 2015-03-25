@@ -1,15 +1,15 @@
 /* -------------------------------------------------
 
-//                                                 
-//  88888888888           ad88888ba   88888888888  
-//  88                   d8"     "8b  88           
-//  88                   Y8,          88           
-//  88aaaaa  ,adPPYYba,  `Y8aaaaa,    88aaaaa      
-//  88"""""  ""     `Y8    `"""""8b,  88"""""      
-//  88       ,adPPPPP88          `8b  88           
-//  88       88,    ,88  Y8a     a8P  88           
-//  88       `"8bbdP"Y8   "Y88888P"   88888888888  
-//                                                 
+//
+//  88888888888           ad88888ba   88888888888
+//  88                   d8"     "8b  88
+//  88                   Y8,          88
+//  88aaaaa  ,adPPYYba,  `Y8aaaaa,    88aaaaa
+//  88"""""  ""     `Y8    `"""""8b,  88"""""
+//  88       ,adPPPPP88          `8b  88
+//  88       88,    ,88  Y8a     a8P  88
+//  88       `"8bbdP"Y8   "Y88888P"   88888888888
+//
 //
 
 Pedro {Paredes, Ribeiro} - DCC/FCUP
@@ -20,6 +20,7 @@ Base FaSE implementation
 ---------------------------------------------------- */
 
 #include "Fase.h"
+#include "Graphlets5.h"
 
 int Fase::K;
 long long int Fase::MotifCount = 0;
@@ -200,788 +201,241 @@ void Fase::GraphletsCount(Graph *_G, int _K)
     GraphletsExtendSubgraph(extNum, 1, 0);
   }
 
-  calcOrbitFrequency();
-  calcGraphletFrequency();
   solveEquations();
+  calcOrbitFrequency();
+  //calcGraphletFrequency();
 
   //fclose(typeFile);
 }
 
 void Fase::GraphletsExtendSubgraph(int extNum, int subSize, int node)
 {
-  int i, graph, graphlet;
+  int graph, graphlet;
   int x, a, b, c, xa, xb, xc, ab, ac, bc;
+
+  int ncases;
+  int* mycase;
 
   bool** adjM    = G->adjacencyMatrix();
   int * deg      = G->arrayNumNeighbours();
 
-  if (subSize + 1 == 4)
+  int node1   = node;
+  int extNum1 = extNum;
+
+  int i1, j1, o1, i2, j2, o2, i3;
+  int extCpyNum1, extCpyNum2;
+  int exti1, *eExcl1, eExclNum1, exti2, *eExcl2, eExclNum2, exti3, *eExcl3, eExclNum3;
+
+  memcpy(extCpy[1], extCpy[0], extNum1 * sizeof(short));
+
+  // K = 2
+  for (i1 = extNum1 - 1; i1 >= 0; i1--)
   {
-    for (i = 0; i < extNum; i++)
+    extCpyNum1 = i1;
+    exti1      = extCpy[0][i1];
+    eExcl1     = G->arrayNeighbours(exti1);
+    eExclNum1  = G->numNeighbours(exti1);
+
+    for (j1 = 0; j1 < eExclNum1; j1++)
     {
-      int exti = extCpy[subSize - 1][i];
+      int eEj1 = eExcl1[j1];
+      if (eEj1 <= sub[0]) continue;
+      for (o1 = 0; o1 < 1; o1++)
+        if (eEj1 == sub[o1] || G->isConnected(eEj1, sub[o1])) break;
+      if (o1 == 1)
+        extCpy[1][extCpyNum1++] = eEj1;
+    }
+    sub[1] = exti1;
 
-      x  = sub[0];
-      a  = sub[1];
-      b  = sub[2];
-      c  = exti;
+    // K = 3
+    int node2   = (node1 << 1);
+    int extNum2 = extCpyNum1;
 
-      xa = inc[x][a]; xb = inc[x][b]; xc = inc[x][c];
-      ab = inc[a][b]; ac = inc[a][c];
-      bc = inc[b][c];
+    memcpy(extCpy[2], extCpy[1], extNum2 * sizeof(short));
+
+    for (i2 = extNum2 - 1; i2 >= 0; i2--)
+    {
+      extCpyNum2 = i2;
+      exti2      = extCpy[1][i2];
+      eExcl2     = G->arrayNeighbours(exti2);
+      eExclNum2  = G->numNeighbours(exti2);
+
+      for (j2 = 0; j2 < eExclNum2; j2++)
+      {
+        int eEj2 = eExcl2[j2];
+        if (eEj2 <= sub[0])
+          continue;
+        for (o2 = 0; o2 < 2; o2++)
+          if (eEj2 == sub[o2] || G->isConnected(eEj2, sub[o2]))
+            break;
+        if (o2 == 2)
+          extCpy[2][extCpyNum2++] = eEj2;
+      }
 
       int nm = 0;
-      bool *p = adjM[exti];
-      for (int j = 0; j < subSize; j++)
-        nm += ((int)(*(p + sub[j])) << j);
 
-      int myType = (node << subSize) + nm;
+      bool *p = adjM[exti2];
+      for (int j2 = 0; j2 < 2; j2++)
+        nm += ((int)(*(p + sub[j2])) << j2);
+
+      int myType = (node2 << 2) + nm;
       type[myType]++;
 
-      graph    = mapLabelToGraph[myType];
-      graphlet = mapGraphToGraphlet[graph];
+      sub[2] = exti2;
 
-      //(node << subSize) + nm == clique[K - 1]
-      if (graphlet == 8)
+      // K = 4
+      int node3   = myType;
+      int extNum3 = extCpyNum2;
+
+      memcpy(extCpy[3], extCpy[2], extNum3 * sizeof(short));
+
+      for (i3 = 0; i3 < extNum3; i3++)
       {
-        //Calculo Clique-K
-        //if(GTrieNode::adjM[a][neigh] && GTrieNode::adjM[b][neigh] && GTrieNode::adjM[c][neigh]) GTrie::orbit_freq[72]++;
-        int *eExcl = G->arrayNeighbours(exti);
-        int eExclNum = G->numNeighbours(exti);
-        for (int j = 0; j < eExclNum; j++)
-        {
-          int eEj = eExcl[j];
-          
-          bool *p = adjM[eEj];
-          int fl = 1;
-          for (int l = 0; fl && l < subSize; l++)
-            fl &= ((sub[l] >= eEj) & (int)*(p + sub[l]));
-
-          orbits[72] += fl * 5;
-        }
-      }
-
-      /** Graphlet 8 **/
-      if (graph == 10) {// nao fazer isto hard coded! just testing
-          // o - o
-          // | X |
-          // o - o
-          // All 4 cases: [x,c,b,a], [b,x,c,a], [a,x,c,b], [c,x,b,a]
-
-          orbits[70] += common3_get(TRIPLE(a, b, c)) - 1 +
-                        common3_get(TRIPLE(x, b, c)) - 1 +
-                        common3_get(TRIPLE(x, a, c)) - 1 +
-                        common3_get(TRIPLE(x, a, b)) - 1;
-
-          orbits[71] += ((tri[xc]>2 && tri[xb]>2)?(common3_get(TRIPLE(x,c,b))-1):0) +
-                        ((tri[xc]>2 && tri[xa]>2)?(common3_get(TRIPLE(x,a,c))-1):0) +
-                        ((tri[xb]>2 && tri[xa]>2)?(common3_get(TRIPLE(x,b,a))-1):0)
-                                                           +
-                        ((tri[xb]>2 && tri[bc]>2)?(common3_get(TRIPLE(b,x,c))-1):0) +
-                        ((tri[xb]>2 && tri[ab]>2)?(common3_get(TRIPLE(x,a,b))-1):0) +
-                        ((tri[bc]>2 && tri[ab]>2)?(common3_get(TRIPLE(b,c,a))-1):0)
-                                                           +
-                        ((tri[xa]>2 && tri[ac]>2)?(common3_get(TRIPLE(a,x,c))-1):0) +
-                        ((tri[xa]>2 && tri[ab]>2)?(common3_get(TRIPLE(x,a,b))-1):0) +
-                        ((tri[ac]>2 && tri[ab]>2)?(common3_get(TRIPLE(a,c,b))-1):0)
-                                                           +
-                        ((tri[xc]>2 && tri[bc]>2)?(common3_get(TRIPLE(c,x,b))-1):0) +
-                        ((tri[xc]>2 && tri[ac]>2)?(common3_get(TRIPLE(x,a,c))-1):0) +
-                        ((tri[bc]>2 && tri[ac]>2)?(common3_get(TRIPLE(c,b,a))-1):0);
-
-          orbits[67] += tri[xc] + tri[xb] + tri[xa] - 6 +
-                        tri[xb] + tri[bc] + tri[ab] - 6 +
-                        tri[xa] + tri[ac] + tri[ab] - 6 +
-                        tri[xc] + tri[bc] + tri[ac] - 6 ;
-
-          orbits[66] += common2_get(PAIR(c,b)) + common2_get(PAIR(c,a)) + common2_get(PAIR(b,a)) - 6 +
-                        common2_get(PAIR(x,c)) + common2_get(PAIR(x,a)) + common2_get(PAIR(c,a)) - 6 +
-                        common2_get(PAIR(x,c)) + common2_get(PAIR(x,b)) + common2_get(PAIR(c,b)) - 6 +
-                        common2_get(PAIR(x,b)) + common2_get(PAIR(x,a)) + common2_get(PAIR(b,a)) - 6;
-
-          orbits[58] += deg[x] - 3 +
-                        deg[b] - 3 +
-                        deg[a] - 3 +
-                        deg[c] - 3;
-
-          orbits[57] += deg[c] + deg[b] + deg[a] - 9 +
-                        deg[x] + deg[c] + deg[a] - 9 +
-                        deg[x] + deg[c] + deg[b] - 9 +
-                        deg[x] + deg[b] + deg[a] - 9;
-      }
-
-      /** Graphlet 7 **/
-      else if(graph == 3){
-          // o - o
-          // | \ |
-          // o - o
-
-          // Orbit 13
-          // 2 Cases: [x,c,b,a], [c,x,b,a]
-          orbits[69] += ((tri[xb]>1 && tri[xa]>1)?(common3_get(TRIPLE(x,b,a))-1):0) +
-                        ((tri[bc]>1 && tri[ac]>1)?(common3_get(TRIPLE(c,b,a))-1):0);
-          orbits[68] += common3_get(TRIPLE(c,b,a)) - 1 +
-                        common3_get(TRIPLE(x,b,a)) - 1;
-          orbits[64] += common2_get(PAIR(b,a)) - 2 +
-                        common2_get(PAIR(b,a)) - 2;
-          orbits[61] += tri[xb] + tri[xa] - 2 +
-                        tri[bc] + tri[ac] - 2;
-          orbits[60] += common2_get(PAIR(c,b)) + common2_get(PAIR(c,a)) - 2 +
-                        common2_get(PAIR(x,b)) + common2_get(PAIR(x,a)) - 2;
-          orbits[55] += tri[xc] - 2 +
-                        tri[xc] - 2;
-          orbits[48] += deg[b] + deg[a] - 4 +
-                        deg[b] + deg[a] - 4;
-          orbits[42] += deg[x] - 3 +
-                        deg[c] - 3;
-          orbits[41] += deg[c] - 3 +
-                        deg[x] - 3;
-
-          // Orbit 12
-          // 2 Cases: [b,x,c,a], [a,x,c,b]
-          //printf("3: [%d, %d, %d, %d]\n", x, a, b, c);
-          orbits[65] += ((tri[xa]>1)?common3_get(TRIPLE(x,c,a)):0) +
-                        ((tri[xb]>1)?common3_get(TRIPLE(x,c,b)):0);
-          orbits[63] += common_x[b][a] - 2 +
-                        common_x[a][b] - 2;
-          orbits[59] += tri[xa]-1+common2_get(PAIR(c,a)) - 1 +
-                        tri[xb]-1+common2_get(PAIR(c,b)) - 1;
-          orbits[54] += common2_get(PAIR(x,c)) - 2 +
-                        common2_get(PAIR(x,c)) - 2;
-          orbits[47] += deg[b] - 2 +
-                        deg[a] - 2;
-          orbits[46] += deg[a] - 2 +
-                        deg[b] - 2;
-          orbits[40] += deg[x] + deg[c] - 6 +
-                        deg[x] + deg[c] - 6;
-      }
-      else if(graph == 9){
-          // o - o
-          // | x
-          // o - o
-
-          // Orbit 13
-          // 2 Cases: [x,a,c,b], [a,x,c,b]
-          orbits[69] += ((tri[xc]>1 && tri[xb]>1)?(common3_get(TRIPLE(x,c,b))-1):0) +
-                        ((tri[ac]>1 && tri[ab]>1)?(common3_get(TRIPLE(a,c,b))-1):0);
-          orbits[68] += common3_get(TRIPLE(a,c,b)) - 1 +
-                        common3_get(TRIPLE(x,c,b)) - 1;
-          orbits[64] += common2_get(PAIR(c,b)) - 2 +
-                        common2_get(PAIR(c,b)) - 2;
-          orbits[61] += tri[xc] + tri[xb] - 2 +
-                        tri[ac] + tri[ab] - 2;
-          orbits[60] += common2_get(PAIR(a,c)) + common2_get(PAIR(a,b)) - 2 +
-                        common2_get(PAIR(x,c)) + common2_get(PAIR(x,b)) - 2;
-          orbits[55] += tri[xa] - 2 +
-                        tri[xa] - 2;
-          orbits[48] += deg[c] + deg[b] - 4 +
-                        deg[c] + deg[b] - 4;
-          orbits[42] += deg[x] - 3 +
-                        deg[a] - 3;
-          orbits[41] += deg[a] - 3 +
-                        deg[x] - 3;
-
-          // Orbit 12
-          // 2 Cases: [c,x,a,b], [b,x,a,c]
-          //printf("9: [%d, %d, %d, %d]\n", x, a, b, c);
-          orbits[65] += ((tri[xb]>1)?common3_get(TRIPLE(x,a,b)):0) +
-                        ((tri[xc]>1)?common3_get(TRIPLE(x,a,c)):0);
-          orbits[63] += common_x[c][b] - 2 +
-                        common_x[b][c] - 2;
-          orbits[59] += tri[xb]-1+common2_get(PAIR(a,b)) - 1 +
-                        tri[xc]-1+common2_get(PAIR(a,c)) - 1;
-          orbits[54] += common2_get(PAIR(x,a)) - 2 +
-                        common2_get(PAIR(x,a)) - 2;
-          orbits[47] += deg[c] - 2 +
-                        deg[b] - 2;
-          orbits[46] += deg[b] - 2 +
-                        deg[c] - 2;
-          orbits[40] += deg[x] + deg[a] - 6 +
-                        deg[x] + deg[a] - 6;
-      }
-      else if(graph == 11){
-          // o - o
-          // | x |
-          // o   o
-
-          // Orbit 13
-          // 2 Cases: [x,b,c,a], [b,x,c,a]
-          orbits[69] += ((tri[xc]>1 && tri[xa]>1)?(common3_get(TRIPLE(x,c,a))-1):0) +
-                        ((tri[bc]>1 && tri[ab]>1)?(common3_get(TRIPLE(b,c,a))-1):0);
-          orbits[68] += common3_get(TRIPLE(b,c,a)) - 1 +
-                        common3_get(TRIPLE(x,c,a)) - 1;
-          orbits[64] += common2_get(PAIR(c,a)) - 2 +
-                        common2_get(PAIR(c,a)) - 2;
-          orbits[61] += tri[xc] + tri[xa] - 2 +
-                        tri[bc] + tri[ab] - 2;
-          orbits[60] += common2_get(PAIR(b,c)) + common2_get(PAIR(b,a)) - 2 +
-                        common2_get(PAIR(x,c)) + common2_get(PAIR(x,a)) - 2;
-          orbits[55] += tri[xb] - 2 +
-                        tri[xb] - 2;
-          orbits[48] += deg[c] + deg[a] - 4 +
-                        deg[c] + deg[a] - 4;
-          orbits[42] += deg[x] - 3 +
-                        deg[b] - 3;
-          orbits[41] += deg[b] - 3 +
-                        deg[x] - 3;
-
-          // Orbit 12
-          // 2 Cases: [c,x,b,a], [a,x,b,c]
-          //printf("11: [%d, %d, %d, %d]\n", x, a, b, c);
-          orbits[65] += ((tri[xa]>1)?common3_get(TRIPLE(x,b,a)):0) +
-                        ((tri[xc]>1)?common3_get(TRIPLE(x,b,c)):0);
-          orbits[63] += common_x[c][a] - 2 +
-                        common_x[a][c] - 2;
-          orbits[59] += tri[xa]-1+common2_get(PAIR(b,a)) - 1 +
-                        tri[xc]-1+common2_get(PAIR(b,c)) - 1;
-          orbits[54] += common2_get(PAIR(x,b)) - 2 +
-                        common2_get(PAIR(x,b)) - 2;
-          orbits[47] += deg[c] - 2 +
-                        deg[a] - 2;
-          orbits[46] += deg[a] - 2 +
-                        deg[c] - 2;
-          orbits[40] += deg[x] + deg[b] - 6 +
-                        deg[x] + deg[b] - 6;
-      }
-      else if(graph == 17){
-          // o   o
-          // | x |
-          // o - o
-
-          // Orbit 13
-          // 2 Cases: [c,a,x,b], [a,c,x,b]
-          orbits[69] += ((tri[xc]>1 && tri[bc]>1)?(common3_get(TRIPLE(c,x,b))-1):0) +
-                        ((tri[xa]>1 && tri[ab]>1)?(common3_get(TRIPLE(a,x,b))-1):0);
-          orbits[68] += common3_get(TRIPLE(a,x,b)) - 1 +
-                        common3_get(TRIPLE(c,x,b)) - 1;
-          orbits[64] += common2_get(PAIR(x,b)) - 2 +
-                        common2_get(PAIR(x,b)) - 2;
-          orbits[61] += tri[xc] + tri[bc] - 2 +
-                        tri[xa] + tri[ab] - 2;
-          orbits[60] += common2_get(PAIR(a,x)) + common2_get(PAIR(a,b)) - 2 +
-                        common2_get(PAIR(c,x)) + common2_get(PAIR(c,b)) - 2;
-          orbits[55] += tri[ac] - 2 +
-                        tri[ac] - 2;
-          orbits[48] += deg[x] + deg[b] - 4 +
-                        deg[x] + deg[b] - 4;
-          orbits[42] += deg[c] - 3 +
-                        deg[a] - 3;
-          orbits[41] += deg[a] - 3 +
-                        deg[c] - 3;
-
-          // Orbit 12
-          // 2 Cases: [x,c,a,b], [b,c,a,x]
-          orbits[65] += ((tri[bc]>1)?common3_get(TRIPLE(c,a,b)):0) +
-                        ((tri[xc]>1)?common3_get(TRIPLE(c,a,x)):0);
-          orbits[63] += common_x[x][b] - 2 +
-                        common_x[b][x] - 2;
-          orbits[59] += tri[bc]-1+common2_get(PAIR(a,b)) - 1 +
-                        tri[xc]-1+common2_get(PAIR(a,x)) - 1;
-          orbits[54] += common2_get(PAIR(c,a)) - 2 +
-                        common2_get(PAIR(c,a)) - 2;
-          orbits[47] += deg[x] - 2 +
-                        deg[b] - 2;
-          orbits[46] += deg[b] - 2 +
-                        deg[x] - 2;
-          orbits[40] += deg[c] + deg[a] - 6 +
-                        deg[c] + deg[a] - 6;
-
-      }
-
-      /** Graphlet 6 **/
-      else if(graph == 2){
-          // o - o
-          // | \
-          // o - o
-
-          // Orbit 11
-          // 1 Case: [x,c,a,b]
-          orbits[44] += tri[xb];
-          orbits[33] += deg[x] - 3;
-          orbits[30] += deg[b] - 1;
-          orbits[26] += deg[c] + deg[a] - 4;
-
-          // Orbit 10
-          // 2 Cases: [c,a,x,b], [a,c,x,b]
-          orbits[52] += common_x[a][b] - 1 +
-                        common_x[c][b] - 1;
-          orbits[43] += tri[xb] +
-                        tri[xb];
-          orbits[32] += deg[x] - 3 +
-                        deg[x] - 3;
-          orbits[29] += deg[b] - 1 +
-                        deg[b] - 1;
-          orbits[25] += deg[a] - 2 +
-                        deg[c] - 2;
-
-          // Orbit 9
-          // 1 Case: [b,x,c,a]
-          orbits[56] += (tri[xc]>1 && tri[xa]>1)?common3_get(TRIPLE(x,c,a)):0;
-          orbits[45] += common2_get(PAIR(c,a)) - 1;
-          orbits[39] += tri[xc] + tri[xa] - 2;
-          orbits[31] += deg[x] - 3;
-          orbits[28] += deg[b] - 1;
-          orbits[24] += deg[c] + deg[a] - 4;
-
-      }
-      else if(graph == 4){
-          // o - o
-          // | \ |
-          // o   o
-
-          // Orbit 11
-          // 1 Case: [x,c,b,a]
-          orbits[44] += tri[xa];
-          orbits[33] += deg[x] - 3;
-          orbits[30] += deg[a] - 1;
-          orbits[26] += deg[c] + deg[b] - 4;
-
-          // Orbit 10
-          // 2 Cases: [c,b,x,a], [b,c,x,a]
-          orbits[52] += common_x[b][a] - 1 +
-                        common_x[c][a] - 1;
-          orbits[43] += tri[xa] +
-                        tri[xa];
-          orbits[32] += deg[x] - 3 +
-                        deg[x] - 3;
-          orbits[29] += deg[a] - 1 +
-                        deg[a] - 1;
-          orbits[25] += deg[b] - 2 +
-                        deg[c] - 2;
-
-          // Orbit 9
-          // 1 Case: [a,x,c,b]
-          orbits[56] += (tri[xc]>1 && tri[xb]>1)?common3_get(TRIPLE(x,c,b)):0;
-          orbits[45] += common2_get(PAIR(c,b)) - 1;
-          orbits[39] += tri[xc] + tri[xb] - 2;
-          orbits[31] += deg[x] - 3;
-          orbits[28] += deg[a] - 1;
-          orbits[24] += deg[c] + deg[b] - 4;
-      }
-      else if(graph == 8){
-          // o - o
-          // | x
-          // o   o
-
-          // Orbit 11
-          // 1 Case: [x,b,a,c]
-          orbits[44] += tri[xc];
-          orbits[33] += deg[x] - 3;
-          orbits[30] += deg[c] - 1;
-          orbits[26] += deg[b] + deg[a] - 4;
-
-          // Orbit 10
-          // 2 Cases: [b,a,x,c], [a,b,x,c]
-          orbits[52] += common_x[a][c] - 1 +
-                        common_x[b][c] - 1;
-          orbits[43] += tri[xc] +
-                        tri[xc];
-          orbits[32] += deg[x] - 3 +
-                        deg[x] - 3;
-          orbits[29] += deg[c] - 1 +
-                        deg[c] - 1;
-          orbits[25] += deg[a] - 2 +
-                        deg[b] - 2;
-
-          // Orbit 9
-          // 1 Case: [c,x,b,a]
-          orbits[56] += (tri[xb]>1 && tri[xa]>1)?common3_get(TRIPLE(x,b,a)):0;
-          orbits[45] += common2_get(PAIR(b,a)) - 1;
-          orbits[39] += tri[xb] + tri[xa] - 2;
-          orbits[31] += deg[x] - 3;
-          orbits[28] += deg[c] - 1;
-          orbits[24] += deg[b] + deg[a] - 4;
-      }
-      else if(graph == 14){
-          // o - o
-          // | / |
-          // o   o
-
-          // Orbit 11
-          // 1 Case: [b,x,a,c]
-          orbits[44] += tri[bc];
-          orbits[33] += deg[b] - 3;
-          orbits[30] += deg[c] - 1;
-          orbits[26] += deg[x] + deg[a] - 4;
-
-          // Orbit 10
-          // 2 Cases: [x,a,b,c], [c,x,a,b]
-          orbits[52] += common_x[a][c] - 1 +
-                        common_x[x][c] - 1;
-          orbits[43] += tri[bc] +
-                        tri[bc];
-          orbits[32] += deg[b] - 3 +
-                        deg[b] - 3;
-          orbits[29] += deg[c] - 1 +
-                        deg[c] - 1;
-          orbits[25] += deg[a] - 2 +
-                        deg[x] - 2;
-
-          // Orbit 9
-          // 1 Case: [c,b,x,a]
-          orbits[56] += (tri[xb]>1 && tri[ab]>1)?common3_get(TRIPLE(b,x,a)):0;
-          orbits[45] += common2_get(PAIR(x,a)) - 1;
-          orbits[39] += tri[xb] + tri[ab] - 2;
-          orbits[31] += deg[b] - 3;
-          orbits[28] += deg[c] - 1;
-          orbits[24] += deg[x] + deg[a] - 4;
-      }
-      else if(graph == 16){
-          // o   o
-          // | x
-          // o - o
-
-          // Orbit 11
-          // 1 Case: [a,x,c,b]
-          orbits[44] += tri[ab];
-          orbits[33] += deg[a] - 3;
-          orbits[30] += deg[b] - 1;
-          orbits[26] += deg[x] + deg[c] - 4;
-
-          // Orbit 10
-          // 2 Cases: [x,c,a,b], [c,x,a,b]
-          orbits[52] += common_x[x][b] - 1 +
-                        common_x[c][b] - 1;
-          orbits[43] += tri[ab] +
-                        tri[ab];
-          orbits[32] += deg[a] - 3 +
-                        deg[a] - 3;
-          orbits[29] += deg[b] - 1 +
-                        deg[b] - 1;
-          orbits[25] += deg[c] - 2 +
-                        deg[x] - 2;
-
-          // Orbit 9
-          // 1 Case: [b,a,x,c]
-          orbits[56] += (tri[xa]>1 && tri[ac]>1)?common3_get(TRIPLE(a,x,c)):0;
-          orbits[45] += common2_get(PAIR(x,c)) - 1;
-          orbits[39] += tri[xa] + tri[ac] - 2;
-          orbits[31] += deg[a] - 3;
-          orbits[28] += deg[b] - 1;
-          orbits[24] += deg[x] + deg[c] - 4;
-      }
-      else if(graph == 20){
-          // o   o
-          // | / |
-          // o - o
-
-          // Orbit 11
-          // 1 Case: [a,c,b,x]
-          orbits[44] += tri[xa];
-          orbits[33] += deg[a] - 3;
-          orbits[30] += deg[x] - 1;
-          orbits[26] += deg[c] + deg[b] - 4;
-
-          // Orbit 10
-          // 2 Cases: [c,b,a,x], [b,c,a,x]
-          orbits[52] += common_x[b][x] - 1 +
-                        common_x[c][x] - 1;
-          orbits[43] += tri[xa] +
-                        tri[xa];
-          orbits[32] += deg[a] - 3 +
-                        deg[a] - 3;
-          orbits[29] += deg[x] - 1 +
-                        deg[x] - 1;
-          orbits[25] += deg[b] - 2 +
-                        deg[c] - 2;
-
-          // Orbit 9
-          // 1 Case: [x,a,c,b]
-          orbits[56] += (tri[ac]>1 && tri[ab]>1)?common3_get(TRIPLE(a,c,b)):0;
-          orbits[45] += common2_get(PAIR(c,b)) - 1;
-          orbits[39] += tri[ac] + tri[ab] - 2;
-          orbits[31] += deg[a] - 3;
-          orbits[28] += deg[x] - 1;
-          orbits[24] += deg[c] + deg[b] - 4;
-      }
-
-      /** Graphlet 5 **/
-
-      else if(graph == 18){
-          // o - o
-          // |   |
-          // o - o
-
-          // Orbit 8
-          // All 4 Cases: [x,c,a,b], [c,x,b,a], [b,c,a,x], [a,x,b,c]
-          orbits[62] += ((tri[bc]>0)?common3_get(TRIPLE(c,a,b)):0) +
-                        ((tri[xa]>0)?common3_get(TRIPLE(x,b,a)):0) +
-                        ((tri[xc]>0)?common3_get(TRIPLE(c,a,x)):0) +
-                        ((tri[xc]>0)?common3_get(TRIPLE(x,b,c)):0);
-          orbits[53] += tri[xc] + tri[xa] +
-                        tri[xc] + tri[bc] +
-                        tri[bc] + tri[ab] +
-                        tri[xa] + tri[ab];
-          orbits[51] += tri[bc] + common2_get(PAIR(a,b)) +
-                        tri[xa] + common2_get(PAIR(b,a)) +
-                        tri[xc] + common2_get(PAIR(a,x)) +
-                        tri[xc] + common2_get(PAIR(b,c));
-          orbits[50] += common_x[x][b] - 2 +
-                        common_x[c][a] - 2 +
-                        common_x[b][x] - 2 +
-                        common_x[a][c] - 2;
-          orbits[49] += common_x[c][a] - 2 +
-                        common_x[x][b] - 2 +
-                        common_x[c][a] - 2 +
-                        common_x[x][b] - 2;
-          orbits[38] += deg[x] - 2 +
-                        deg[c] - 2 +
-                        deg[b] - 2 +
-                        deg[a] - 2;
-          orbits[37] += deg[c] + deg[a] - 4 +
-                        deg[x] + deg[b] - 4 +
-                        deg[c] + deg[a] - 4 +
-                        deg[x] + deg[b] - 4;
-          orbits[36] += deg[b] - 2 +
-                        deg[a] - 2 +
-                        deg[x] - 2 +
-                        deg[c] - 2;
-      }
-
-      /** Graphlet 4 **/
-
-      else if(graph == 1){
-          // Orbit 6
-          //printf("[%d, %d, %d, %d]\n", x+1, a+1, b+1, c+1);
-          orbits[22] += deg[x] - 3 +
-                        deg[x] - 3 +
-                        deg[x] - 3;
-          orbits[20] += deg[c] - 1 +
-                        deg[b] - 1 +
-                        deg[a] - 1;
-          orbits[19] += deg[b] + deg[a] - 2 +
-                        deg[c] + deg[a] - 2 +
-                        deg[c] + deg[b] - 2;
-
-          // Orbit 7
-          //printf("[%d, %d, %d, %d]\n", x+1, a+1, b+1, c+1);
-          orbits[23] += deg[x] - 3;
-          orbits[21] += deg[c] + deg[b] + deg[a] - 3;
-
-      }
-      else if(graph == 19){
-          // Orbit 6
-          //
-          orbits[22] += deg[a] - 3 +
-                        deg[a] - 3 +
-                        deg[a] - 3;
-          orbits[20] += deg[x] - 1 +
-                        deg[b] - 1 +
-                        deg[c] - 1;
-          orbits[19] += deg[b] + deg[c] - 2 +
-                        deg[x] + deg[c] - 2 +
-                        deg[x] + deg[b] - 2;
-
-          // Orbit 7
-          //printf("[%d, %d, %d, %d]\n", x+1, a+1, b+1, c+1);
-          orbits[23] += deg[a] - 3;
-          orbits[21] += deg[x] + deg[c] + deg[b] - 3;
-      }
-
-      /** Graphlet 3 **/
-
-      else if(graph == 7){
-          // o - o
-          // |   |
-          // o   o
-
-          // Orbit 4
-          // 2 Cases: [a,x,b,c], [c,b,x,a]
-          orbits[35] += common_x[x][c] - 1 +
-                        common_x[b][a] - 1;
-          orbits[34] += common_x[a][c] +
-                        common_x[c][a];
-          orbits[27] += tri[bc] +
-                        tri[xa];
-          orbits[18] += deg[b] - 2 +
-                        deg[x] - 2;
-          orbits[16] += deg[a] - 1 +
-                        deg[c] - 1;
-          orbits[15] += deg[c] - 1 +
-                        deg[a] - 1;
-
-          //Orbit 5
-          // 2 Cases: [x,a,b,c], [b,c,x,a]
-          orbits[17] += deg[a] - 1 +
-                        deg[c] - 1;
-      }
-      else if(graph == 15){
-          // o   o
-          // | x
-          // o   o
-
-          // Orbit 4
-          // 2 Cases: [c,x,a,b], [b,a,x,c]
-          orbits[35] += common_x[x][b] - 1 +
-                        common_x[a][c] - 1;
-          orbits[34] += common_x[c][b] +
-                        common_x[b][c];
-          orbits[27] += tri[ab] +
-                        tri[xc];
-          orbits[18] += deg[a] - 2 +
-                        deg[x] - 2;
-          orbits[16] += deg[c] - 1 +
-                        deg[b] - 1;
-          orbits[15] += deg[b] - 1 +
-                        deg[c] - 1;
-
-          // Orbit 5
-          // 2 Cases: [x,c,a,b], [a,b,x,c]
-          orbits[17] += deg[c] - 1 +
-                        deg[b] - 1;
-      }
-      else if(graph == 21){
-          // o   o
-          // | / |
-          // o   o
-
-          // Orbit 4
-          // 2 Cases: [x,a,b,c], [c,b,a,x]
-          orbits[35] += common_x[a][c] - 1 +
-                        common_x[b][x] - 1;
-          orbits[34] += common_x[x][c] +
-                        common_x[c][x];
-          orbits[27] += tri[bc] +
-                        tri[xa];
-          orbits[18] += deg[b] - 2 +
-                        deg[a] - 2;
-          orbits[16] += deg[x] - 1 +
-                        deg[c] - 1;
-          orbits[15] += deg[c] - 1 +
-                        deg[x] - 1;
-
-          // Orbit 5
-          // 2 Cases: [a,x,b,c], [b,c,a,x]
-          orbits[17] += deg[x] - 1 +
-                        deg[c] - 1;
-      }
-
-      sub[subSize] = exti;
-
-
-      /*if(types[myType] == 0){
-        for(int k = 0; k <= subSize; k++)
-            fprintf(typeFile, "%d ", sub[k]+1);
-        fprintf(typeFile, "\n");
-        fprintf(typeFile, "Type %d: [\n\t  ", myType);
-        for (int j = 0; j <= subSize; j++){
-          for (int k = 0; k <= subSize; k++)
-            fprintf(typeFile, "%d, ", adjM[sub[j]][sub[k]]);
-          fprintf(typeFile, "\n\t  ");
-        }
-        fprintf(typeFile, "]\n");
-        types[myType] = 1;
-      }*/
-    }
-    return;
-  }
-
-  else if(subSize + 1 == 3){
-      int j, o;
-      int extCpyNum;
-      int exti, *eExcl, eExclNum;
-
-      memcpy(extCpy[subSize], extCpy[subSize - 1], extNum * sizeof(short));
-
-      for (i = extNum - 1; i >= 0; i--)
-      {
-        extCpyNum = i;
-        exti = extCpy[subSize - 1][i];
-        eExcl = G->arrayNeighbours(exti);
-        eExclNum = G->numNeighbours(exti);
-
-        for (j = 0; j < eExclNum; j++)
-        {
-          int eEj = eExcl[j];
-          if (eEj <= sub[0])
-            continue;
-          for (o = 0; o < subSize; o++)
-            if (eEj == sub[o] || G->isConnected(eEj, sub[o]))
-              break;
-          if (o == subSize)
-            extCpy[subSize][extCpyNum++] = eEj;
-        }
+        exti3  = extCpy[2][i3];
+        sub[3] = exti3;
 
         int nm = 0;
+        bool *p = adjM[exti3];
+        for (int j3 = 0; j3 < 3; j3++)
+          nm += ((int)(*(p + sub[j3])) << j3);
 
-        if (subSize >= 2)
-        {
-          bool *p = adjM[exti];
-          for (int j = 0; j < subSize; j++)
-            nm += ((int)(*(p + sub[j])) << j);
-        }
-
-        int myType = (node << subSize) + nm;
+        int myType = (node3 << 3) + nm;
         type[myType]++;
 
-        sub[subSize] = exti;
+        //MotifCount++;
 
-        GraphletsExtendSubgraph(extCpyNum, subSize + 1, (node << subSize) + nm);
-      }
-  }
+        graph    = mapLabelToGraph[myType];
+        graphlet = mapGraphToGraphlet[graph];
 
-  else { // k=2
-      int j, o;
-      int extCpyNum;
-      int exti, *eExcl, eExclNum;
+        /** Graphlet 3 **/
+        if(graphlet == 3){
+            // Orbit 4
+            ncases = 2; //Graphlets5::getNCases(graph, 4);
 
-      memcpy(extCpy[subSize], extCpy[subSize - 1], extNum * sizeof(short));
+            for(int i = 0; i < ncases; i++){
+              mycase      = Graphlets5::getCase(graph, 4, i);
 
-      for (i = extNum - 1; i >= 0; i--)
-      {
-        extCpyNum = i;
-        exti = extCpy[subSize - 1][i];
-        eExcl = G->arrayNeighbours(exti);
-        eExclNum = G->numNeighbours(exti);
+              x  = sub[mycase[0]]; a  = sub[mycase[1]]; b  = sub[mycase[2]]; c  = sub[mycase[3]];
 
-        for (j = 0; j < eExclNum; j++)
-        {
-          int eEj = eExcl[j];
-          if (eEj <= sub[0])
-            continue;
-          for (o = 0; o < subSize; o++)
-            if (eEj == sub[o] || G->isConnected(eEj, sub[o]))
-              break;
-          if (o == subSize)
-            extCpy[subSize][extCpyNum++] = eEj;
+              bc = inc[b][c];
+
+              orbits[35] += common_x[a][c] - 1;
+              orbits[34] += common_x[x][c];
+              orbits[27] += tri[bc];
+              orbits[18] += deg[b] - 2;
+              orbits[15] += deg[c] - 1;
+            }
         }
 
-        int nm = 0;
+        /** Graphlet 4 **/
+        else if(graphlet == 4){
+            // Orbit 6
 
-        if (subSize >= 2)
-        {
-          bool *p = adjM[exti];
-          for (int j = 0; j < subSize; j++)
-            nm += ((int)(*(p + sub[j])) << j);
+            // Orbit 7
+            mycase      = Graphlets5::getCase(graph, 7, 0);
+
+            x  = sub[mycase[0]];
+
+            orbits[23] += deg[x] - 3;
         }
 
-        sub[subSize] = exti;
+        /** Graphlet 5 **/
+        else if(graphlet == 5){
+            // Orbit 8
+            ncases = 4; //Graphlets5::getNCases(graph, 8);
 
-        GraphletsExtendSubgraph(extCpyNum, subSize + 1, (node << subSize) + nm);
-      }
-  }
-}
+            for(int i = 0; i < ncases; i++){
+              mycase      = Graphlets5::getCase(graph, 8, i);
 
-void Fase::calcOrbitFrequency(){
-    int myType, myGraph, freq, k;
+              x  = sub[mycase[0]]; a  = sub[mycase[1]]; b  = sub[mycase[2]]; c  = sub[mycase[3]];
 
-    for(myType = 0; myType < 32; myType++){
-        myGraph = mapLabelToGraph[myType];
-        if(myGraph == -1) continue; //should remove -1s
+              xa = inc[x][a]; xb = inc[x][b];
 
-        freq = type[myType];
+              orbits[53] += tri[xa] + tri[xb];
+              orbits[50] += common_x[x][c] - 2;
+            }
+        }
 
-        /*printf("type :    %d\n", myType);
-        printf("graph:    %d\n", myGraph);
-        printf("graphlet: %d\n", mapGraphToGraphlet[myGraph]);*/
-        graphlets[mapGraphToGraphlet[myGraph]] += freq;
-        for(k = 0; k < K; k++)
-          orbits[mapGraphletToOrbits[myGraph][k]] += freq;
-    }
-}
+        /** Graphlet 6 **/
+        else if(graphlet == 6){
+            // Orbit 11
+            mycase      = Graphlets5::getCase(graph, 11, 0);
 
-void Fase::calcGraphletFrequency(){
-    graphlets[0]+= orbits[0]/2;
+            x  = sub[mycase[0]]; c  = sub[mycase[3]];
+            xc = inc[x][c];
+
+            orbits[44] += tri[xc];
+
+            // Orbit 10
+
+            // Orbit 9
+            mycase      = Graphlets5::getCase(graph, 9, 0);
+
+            a  = sub[mycase[1]]; b  = sub[mycase[2]]; c  = sub[mycase[3]];
+            ab = inc[a][b]; ac = inc[a][c];
+
+            orbits[45] += common2_get(PAIR(b,c)) - 1;
+            orbits[39] += tri[ab] + tri[ac] - 2;
+            orbits[31] += deg[a] - 3;
+            orbits[24] += deg[b] + deg[c] - 4;
+        }
+
+        /** Graphlet 7 **/
+        else if(graphlet == 7){
+            // Orbit 13
+            ncases = Graphlets5::getNCases(graph, 13);
+
+            for(int i = 0; i < ncases; i++){
+              mycase      = Graphlets5::getCase(graph, 13, i);
+
+              x  = sub[mycase[0]]; a  = sub[mycase[1]]; b  = sub[mycase[2]]; c  = sub[mycase[3]];
+              xa = inc[x][a]; xb = inc[x][b]; xc = inc[x][c];
+
+              orbits[68] += common3_get(TRIPLE(a,b,c)) - 1;
+              orbits[64] += common2_get(PAIR(b,c)) - 2;
+              orbits[61] += tri[xb] + tri[xc] - 2;
+              orbits[55] += tri[xa] - 2;
+            }
+
+            // Orbit 12
+        }
+
+        /** Graphlet 8 **/
+        else if (graphlet == 8)
+        {
+          //Calculo Clique-K
+          //if(GTrieNode::adjM[a][neigh] && GTrieNode::adjM[b][neigh] && GTrieNode::adjM[c][neigh]) GTrie::orbit_freq[72]++;
+          eExcl3    = G->arrayNeighbours(exti3);
+          eExclNum3 = G->numNeighbours(exti3);
+          for (int j3 = 0; j3 < eExclNum3; j3++)
+          {
+            int eEj3 = eExcl3[j3];
+
+            bool *p = adjM[eEj3];
+            int fl = 1;
+            for (int l = 0; fl && l < 3; l++)
+              fl &= ((sub[l] >= eEj3) & (int)*(p + sub[l]));
+
+            orbits[72] += fl * 5;
+           }
+           // Orbit 14
+           ncases = 4; //Graphlets5::getNCases(graph, 14);
+
+           for(int i = 0; i < ncases; i++){
+             mycase      = Graphlets5::getCase(graph, 14, i);
+
+             x  = sub[mycase[0]]; a  = sub[mycase[1]]; b  = sub[mycase[2]]; c  = sub[mycase[3]];
+
+             xa = inc[x][a]; xb = inc[x][b]; xc = inc[x][c];
+
+             orbits[70] += common3_get(TRIPLE(a, b, c)) - 1;
+             orbits[67] += tri[xa] + tri[xb] + tri[xc] - 6;
+             orbits[58] += deg[x] - 3;
+           }
+        }
+       }
+     }
+   }
 }
 
 void Fase::buildCommonNodes(){
@@ -1068,61 +522,122 @@ void Fase::buildCommonNodes(){
 }
 
 void Fase::solveEquations(){
-    orbits[71] = (orbits[71]-12*orbits[72])/2;
     orbits[70] = (orbits[70]-4*orbits[72]);
-    orbits[69] = (orbits[69]-2*orbits[71])/4;
-    orbits[68] = (orbits[68]-2*orbits[71]);
-    orbits[67] = (orbits[67]-12*orbits[72]-4*orbits[71]);
-    orbits[66] = (orbits[66]-12*orbits[72]-2*orbits[71]-3*orbits[70]);
-    orbits[65] = (orbits[65]-3*orbits[70])/2;
-    orbits[64] = (orbits[64]-2*orbits[71]-4*orbits[69]-1*orbits[68]);
-    orbits[63] = (orbits[63]-3*orbits[70]-2*orbits[68]);
-    orbits[62] = (orbits[62]-1*orbits[68])/2;
-    orbits[61] = (orbits[61]-4*orbits[71]-8*orbits[69]-2*orbits[67])/2;
-    orbits[60] = (orbits[60]-4*orbits[71]-2*orbits[68]-2*orbits[67]);
-    orbits[59] = (orbits[59]-6*orbits[70]-2*orbits[68]-4*orbits[65]);
-    orbits[58] = (orbits[58]-4*orbits[72]-2*orbits[71]-1*orbits[67]);
-    orbits[57] = (orbits[57]-12*orbits[72]-4*orbits[71]-3*orbits[70]-1*orbits[67]-2*orbits[66]);
-    orbits[56] = (orbits[56]-2*orbits[65])/3;
-    orbits[55] = (orbits[55]-2*orbits[71]-2*orbits[67])/3;
-    orbits[54] = (orbits[54]-3*orbits[70]-1*orbits[66]-2*orbits[65])/2;
-    orbits[53] = (orbits[53]-2*orbits[68]-2*orbits[64]-2*orbits[63]);
-    orbits[52] = (orbits[52]-2*orbits[66]-2*orbits[64]-1*orbits[59])/2;
-    orbits[51] = (orbits[51]-2*orbits[68]-2*orbits[63]-4*orbits[62]);
-    orbits[50] = (orbits[50]-1*orbits[68]-2*orbits[63])/3;
-    orbits[49] = (orbits[49]-1*orbits[68]-1*orbits[64]-2*orbits[62])/2;
-    orbits[48] = (orbits[48]-4*orbits[71]-8*orbits[69]-2*orbits[68]-2*orbits[67]-2*orbits[64]-2*orbits[61]-1*orbits[60]);
-    orbits[47] = (orbits[47]-3*orbits[70]-2*orbits[68]-1*orbits[66]-1*orbits[63]-1*orbits[60]);
-    orbits[46] = (orbits[46]-3*orbits[70]-2*orbits[68]-2*orbits[65]-1*orbits[63]-1*orbits[59]);
-    orbits[45] = (orbits[45]-2*orbits[65]-2*orbits[62]-3*orbits[56]);
+    orbits[68] = (orbits[68]-3*orbits[70]);
+    orbits[67] = (orbits[67]-12*orbits[72]-6*orbits[70]);
+    orbits[64] = (orbits[64]-3*orbits[70]-1*orbits[68]-1*orbits[68]);
+    orbits[61] = (orbits[61]-6*orbits[70]-2*orbits[68]-2*orbits[67])/2;
+    orbits[58] = (orbits[58]-4*orbits[72]-3*orbits[70]-1*orbits[67]);
+    orbits[55] = (orbits[55]-3*orbits[70]-2*orbits[67])/3;
+    orbits[53] = (orbits[53]-2*orbits[68]-2*orbits[64]-2*orbits[64]);
+    orbits[50] = (orbits[50]-1*orbits[68]-2*orbits[64])/3;
+    orbits[45] = (orbits[45]-1*orbits[67]-1*orbits[64]-3*orbits[58]);
     orbits[44] = (orbits[44]-1*orbits[67]-2*orbits[61])/4;
-    orbits[43] = (orbits[43]-2*orbits[66]-1*orbits[60]-1*orbits[59])/2;
-    orbits[42] = (orbits[42]-2*orbits[71]-4*orbits[69]-2*orbits[67]-2*orbits[61]-3*orbits[55]);
-    orbits[41] = (orbits[41]-2*orbits[71]-1*orbits[68]-2*orbits[67]-1*orbits[60]-3*orbits[55]);
-    orbits[40] = (orbits[40]-6*orbits[70]-2*orbits[68]-2*orbits[66]-4*orbits[65]-1*orbits[60]-1*orbits[59]-4*orbits[54]);
-    orbits[39] = (orbits[39]-4*orbits[65]-1*orbits[59]-6*orbits[56])/2;
-    orbits[38] = (orbits[38]-1*orbits[68]-1*orbits[64]-2*orbits[63]-1*orbits[53]-3*orbits[50]);
-    orbits[37] = (orbits[37]-2*orbits[68]-2*orbits[64]-2*orbits[63]-4*orbits[62]-1*orbits[53]-1*orbits[51]-4*orbits[49]);
-    orbits[36] = (orbits[36]-1*orbits[68]-2*orbits[63]-2*orbits[62]-1*orbits[51]-3*orbits[50]);
-    orbits[35] = (orbits[35]-1*orbits[59]-2*orbits[52]-2*orbits[45])/2;
-    orbits[34] = (orbits[34]-1*orbits[59]-2*orbits[52]-1*orbits[51])/2;
-    orbits[33] = (orbits[33]-1*orbits[67]-2*orbits[61]-3*orbits[58]-4*orbits[44]-2*orbits[42])/2;
-    orbits[32] = (orbits[32]-2*orbits[66]-1*orbits[60]-1*orbits[59]-2*orbits[57]-2*orbits[43]-2*orbits[41]-1*orbits[40])/2;
-    orbits[31] = (orbits[31]-2*orbits[65]-1*orbits[59]-3*orbits[56]-1*orbits[43]-2*orbits[39]);
-    orbits[30] = (orbits[30]-1*orbits[67]-1*orbits[63]-2*orbits[61]-1*orbits[53]-4*orbits[44]);
-    orbits[29] = (orbits[29]-2*orbits[66]-2*orbits[64]-1*orbits[60]-1*orbits[59]-1*orbits[53]-2*orbits[52]-2*orbits[43]);
-    orbits[28] = (orbits[28]-2*orbits[65]-2*orbits[62]-1*orbits[59]-1*orbits[51]-1*orbits[43]);
-    orbits[27] = (orbits[27]-1*orbits[59]-1*orbits[51]-2*orbits[45])/2;
-    orbits[26] = (orbits[26]-2*orbits[67]-2*orbits[63]-2*orbits[61]-6*orbits[58]-1*orbits[53]-2*orbits[47]-2*orbits[42]);
-    orbits[25] = (orbits[25]-2*orbits[66]-2*orbits[64]-1*orbits[59]-2*orbits[57]-2*orbits[52]-1*orbits[48]-1*orbits[40])/2;
-    orbits[24] = (orbits[24]-4*orbits[65]-4*orbits[62]-1*orbits[59]-6*orbits[56]-1*orbits[51]-2*orbits[45]-2*orbits[39]);
-    orbits[23] = (orbits[23]-1*orbits[55]-1*orbits[42]-2*orbits[33])/4;
-    orbits[22] = (orbits[22]-2*orbits[54]-1*orbits[40]-1*orbits[39]-1*orbits[32]-2*orbits[31])/3;
-    orbits[21] = (orbits[21]-3*orbits[55]-3*orbits[50]-2*orbits[42]-2*orbits[38]-2*orbits[33]);
-    orbits[20] = (orbits[20]-2*orbits[54]-2*orbits[49]-1*orbits[40]-1*orbits[37]-1*orbits[32]);
-    orbits[19] = (orbits[19]-4*orbits[54]-4*orbits[49]-1*orbits[40]-2*orbits[39]-1*orbits[37]-2*orbits[35]-2*orbits[31]);
-    orbits[18] = (orbits[18]-1*orbits[59]-1*orbits[51]-2*orbits[46]-2*orbits[45]-2*orbits[36]-2*orbits[27]-1*orbits[24])/2;
-    orbits[17] = (orbits[17]-1*orbits[60]-1*orbits[53]-1*orbits[51]-1*orbits[48]-1*orbits[37]-2*orbits[34]-2*orbits[30])/2;
-    orbits[16] = (orbits[16]-1*orbits[59]-2*orbits[52]-1*orbits[51]-2*orbits[46]-2*orbits[36]-2*orbits[34]-1*orbits[29]);
-    orbits[15] = (orbits[15]-1*orbits[59]-2*orbits[52]-1*orbits[51]-2*orbits[45]-2*orbits[35]-2*orbits[34]-2*orbits[27]);
+    orbits[39] = (orbits[39]-2*orbits[67]-2*orbits[61]-6*orbits[58])/2;
+    orbits[35] = (orbits[35]-2*orbits[61]-1*orbits[53]-2*orbits[45])/2;
+    orbits[34] = (orbits[34]-2*orbits[61]-2*orbits[53])/2;
+    orbits[31] = (orbits[31]-1*orbits[67]-2*orbits[61]-3*orbits[58]-4*orbits[44]-2*orbits[39]);
+    orbits[27] = (orbits[27]-2*orbits[61]-1*orbits[53]-2*orbits[45])/2;
+    orbits[24] = (orbits[24]-2*orbits[67]-2*orbits[64]-2*orbits[61]-6*orbits[58]-1*orbits[53]-2*orbits[45]-2*orbits[39]);
+    orbits[23] = (orbits[23]-1*orbits[55]-1*orbits[39]-1*orbits[31])/4;
+    orbits[18] = (orbits[18]-2*orbits[61]-1*orbits[53]-4*orbits[45]-2*orbits[35]-2*orbits[27]-1*orbits[24])/2;
+    orbits[15] = (orbits[15]-2*orbits[61]-2*orbits[53]-2*orbits[45]-2*orbits[35]-2*orbits[34]-2*orbits[27]);
+}
+
+
+
+void Fase::calcOrbitFrequency(){
+    int myType, myGraph, freq, k;
+
+    for(myType = 0; myType < 32; myType++){
+        myGraph = mapLabelToGraph[myType];
+        if(myGraph == -1) continue; //should remove -1s
+
+        freq = type[myType];
+
+        graphlets[mapGraphToGraphlet[myGraph]] += freq;
+        for(k = 0; k < K; k++)
+          orbits[mapGraphletToOrbits[myGraph][k]] += freq;
+    }
+
+    // G9
+    orbits[16] = orbits[15];
+    orbits[17] = orbits[15]/2;
+
+    // G10
+    orbits[19] = orbits[18] * 2;
+    orbits[20] = orbits[18];
+    orbits[21] = orbits[18];
+
+    // G11
+    orbits[22] = orbits[23] * 4;
+
+    // G12
+    orbits[25] = orbits[24]/2;
+    orbits[26] = orbits[24];
+
+    // G13
+    orbits[28] = orbits[27];
+    orbits[29] = orbits[27] * 2;
+    orbits[30] = orbits[27];
+
+    // G14
+    orbits[32] = orbits[31];
+    orbits[33] = orbits[31]/2;
+
+    // G15
+
+    // G16
+    orbits[36] = orbits[35];
+    orbits[37] = orbits[35] * 2;
+    orbits[38] = orbits[35];
+
+    // G17
+    orbits[40] = orbits[39] * 2;
+    orbits[41] = orbits[39];
+    orbits[42] = orbits[39];
+
+    // G18
+    orbits[43] = orbits[44] * 4;
+
+    // G19
+    orbits[46] = orbits[45];
+    orbits[47] = orbits[45];
+    orbits[48] = orbits[45] * 2;
+
+    // G20
+    orbits[49] = 3*orbits[50]/2;
+
+    // G21
+    orbits[51] = orbits[53];
+    orbits[52] = orbits[53]/2;
+
+    // G22
+    orbits[54] = 3*orbits[55]/2;
+
+    // G23
+    orbits[56] = orbits[58];
+    orbits[57] = orbits[58] * 3;
+
+    // G24
+    orbits[59] = orbits[61] * 2;
+    orbits[60] = orbits[61] * 2;
+
+    // G25
+    orbits[62] = orbits[64]/2;
+    orbits[63] = orbits[64];
+
+    // G26
+    orbits[65] = orbits[67]/2;
+    orbits[66] = orbits[67];
+
+    // G27
+    orbits[69] = orbits[68]/4;
+
+    // G28
+    orbits[71] = 3*orbits[70]/2;
+}
+
+void Fase::calcGraphletFrequency(){
+    graphlets[0]+= orbits[0]/2;
 }

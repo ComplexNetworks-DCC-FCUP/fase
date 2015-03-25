@@ -10,6 +10,7 @@ SRC =                   	\
 	Timer.cpp		\
 	GTrie.cpp		\
 	GraphMatrix.cpp		\
+	Graphlets5.cpp		\
 	GraphList.cpp		\
 	GraphUtils.cpp		\
 	Isomorphism.cpp		\

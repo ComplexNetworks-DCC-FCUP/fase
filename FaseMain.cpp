@@ -28,6 +28,7 @@ Main File For Testing
 #include "Graph.h"
 #include "Isomorphism.h"
 #include "Random.h"
+#include "Graphlets5.h"
 
 using namespace std;
 
@@ -220,9 +221,9 @@ void outputGraphlets()
 
   //for (int i = 0; i < MAXGRAPHS; i++)
     //if (Fase::type[i])
-      //fprintf(f, "Subgraph %d: %lld\n", i, Fase::type[i]);
+      //fprintf(f, "Subgraph %d: %lld\n", i, Fase::type[i]);*/
+    printf("Computation Time (ms): %0.4lf\n", Timer::elapsed());
 
-*/
 }
 
 void finish()
@@ -244,11 +245,16 @@ int main(int argc, char **argv)
   //Timer::start();
 
   Fase::directed = dir;
+
+  Graphlets5::init(31);
+  Graphlets5::buildCases();
+
   Timer::start();
-
   Fase::GraphletsCount(G, K);
-
   Timer::stop();
+
+  Graphlets5::destroy();
+
   outputGraphlets();
   //output();
   

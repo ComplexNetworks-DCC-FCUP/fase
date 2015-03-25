@@ -66,6 +66,8 @@ class Fase
   static void EnumerateSubgraphs(Graph *_G, int _K);
   static void GraphletsCount(Graph *_G, int _K);
 
+  static void updateEquations(int graph, int* sub);
+
   static void calcGraphletFrequency();
   static void calcOrbitFrequency();
   static void solveEquations();
