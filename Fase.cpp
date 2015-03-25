@@ -115,49 +115,25 @@ struct hash_TRIPLE {
     }
 };
 
-unordered_map<PAIR, int, hash_PAIR> common2;
+//unordered_map<PAIR, int, hash_PAIR> common2;
 unordered_map<TRIPLE, int, hash_TRIPLE> common3;
-unordered_map<PAIR, int, hash_PAIR>::iterator common2_it;
+//unordered_map<PAIR, int, hash_PAIR>::iterator common2_it;
 unordered_map<TRIPLE, int, hash_TRIPLE>::iterator common3_it;
 
 #define common3_get(x) (((common3_it=common3.find(x))!=common3.end())?(common3_it->second):0)
-#define common2_get(x) (((common2_it=common2.find(x))!=common2.end())?(common2_it->second):0)
+//#define common2_get(x) (((common2_it=common2.find(x))!=common2.end())?(common2_it->second):0)
 
 int **common_x ;
 PAIR *edges;
 int **inc;
+
+int **common2_adjm;
+
 /****** ORCA ******/
-
-
-long long int Fase::getTypes()
-{
-  return GTrie::getCanonicalNumber();
-}
-
-long long int Fase::getLeafs()
-{
-  return GTrie::getClassNumber();
-}
-
-long long int Fase::getNodes()
-{
-  return GTrie::getNodeNumber();
-}
-
-void Fase::listTree(FILE* f)
-{
-  return GTrie::listGtrie(f);
-}
-
-void Fase::listClasses(FILE* f)
-{
-  return GTrie::listClasses(f);
-}
 
 void Fase::destroy()
 {
   int i;
-  GTrie::destroy();
   delete[] sub;
   for (i = 0; i < K; i++)
     delete[] extCpy[i];
@@ -188,8 +164,8 @@ void Fase::GraphletsCount(Graph *_G, int _K)
 
   for (i = 0; i < graphSize; i++)
   {
-    sub[0] = i;
-    int *nei = G->arrayNeighbours(i);
+    sub[0]     = i;
+    int *nei   = G->arrayNeighbours(i);
     int neiNum = G->numNeighbours(i);
 
     orbits[0]   += neiNum;
@@ -198,7 +174,7 @@ void Fase::GraphletsCount(Graph *_G, int _K)
     for (j = 0; j < neiNum; j++)
       if (nei[j] > i)
         extCpy[0][extNum++] = nei[j];
-    GraphletsExtendSubgraph(extNum, 1, 0);
+    GraphletsExtendSubgraph(extNum, 0);
   }
 
   solveEquations();
@@ -208,7 +184,7 @@ void Fase::GraphletsCount(Graph *_G, int _K)
   //fclose(typeFile);
 }
 
-void Fase::GraphletsExtendSubgraph(int extNum, int subSize, int node)
+void Fase::GraphletsExtendSubgraph(int extNum, int node)
 {
   int graph, graphlet;
   int x, a, b, c, xa, xb, xc, ab, ac, bc;
@@ -374,7 +350,7 @@ void Fase::GraphletsExtendSubgraph(int extNum, int subSize, int node)
             a  = sub[mycase[1]]; b  = sub[mycase[2]]; c  = sub[mycase[3]];
             ab = inc[a][b]; ac = inc[a][c];
 
-            orbits[45] += common2_get(PAIR(b,c)) - 1;
+            orbits[45] += common2_adjm[b][c] - 1;
             orbits[39] += tri[ab] + tri[ac] - 2;
             orbits[31] += deg[a] - 3;
             orbits[24] += deg[b] + deg[c] - 4;
@@ -392,7 +368,7 @@ void Fase::GraphletsExtendSubgraph(int extNum, int subSize, int node)
               xa = inc[x][a]; xb = inc[x][b]; xc = inc[x][c];
 
               orbits[68] += common3_get(TRIPLE(a,b,c)) - 1;
-              orbits[64] += common2_get(PAIR(b,c)) - 2;
+              orbits[64] += common2_adjm[b][c] - 2;
               orbits[61] += tri[xb] + tri[xc] - 2;
               orbits[55] += tri[xa] - 2;
             }
@@ -441,53 +417,62 @@ void Fase::GraphletsExtendSubgraph(int extNum, int subSize, int node)
 void Fase::buildCommonNodes(){
     bool** adjM    = G->adjacencyMatrix();
     int ** fastnei = G->matrixNeighbours();
-    int frac_prev, frac;
+
+    common2_adjm = (int**)malloc(G->numNodes()*sizeof(int*));
+    for (int i=0; i < G->numNodes(); i++)
+        common2_adjm[i] = (int*)malloc(G->numNodes()*sizeof(int));
 
     printf("computing common nodes\n");
-    frac_prev = -1;
+
+    int m = G->numEdges();
+    edges = (PAIR*)malloc(m/2*sizeof(PAIR));
+
+    inc = (int**)malloc(G->numNodes()*sizeof(int*));
+    for (int i=0; i < G->numNodes(); i++) inc[i] = (int*)malloc(G->numNodes()*sizeof(int)); //no need, should be g->numNeighbours(x)
+
+    common_x = (int**)malloc(G->numNodes()*sizeof(int*));
+    for (int i=0; i < G->numNodes(); i++) common_x[i] = (int*)malloc(G->numNodes()*sizeof(int));
+
+    int edge = 0;
+
     for (int x = 0; x < graphSize; x++) {
-        frac = 100LL*x/graphSize;
-        if (frac != frac_prev) {
-            printf("%d%%\r",frac);
-            fflush(stdout);
-            frac_prev=frac;
-        }
         for (int n1 = 0; n1 < G->numNeighbours(x); n1++) {
             int a = fastnei[x][n1];
+            if(x < a) {
+                edges[edge] = PAIR(x, a);
+                inc[x][a]=edge; inc[a][x]=edge;
+                edge++;
+            }
             for (int n2 = n1 + 1; n2 < G->numNeighbours(x); n2++) {
                 int b   = fastnei[x][n2];
-                PAIR ab = PAIR(a,b);
-                common2[ab]++;
+                //PAIR ab = PAIR(a,b);
+                //common2[ab]++;
+                common2_adjm[a][b]++;
+                common2_adjm[b][a]++;
                 for (int n3 = n2 + 1; n3 < G->numNeighbours(x); n3++) {
                     int c  = fastnei[x][n3];
                     int st = adjM[a][b] + adjM[a][c] + adjM[b][c];
                     if (st < 2) continue;
                         TRIPLE abc = TRIPLE(a,b,c);
+                        /*TRIPLE acb = TRIPLE(a,c,b);
+                        TRIPLE bac = TRIPLE(b,a,c);
+                        TRIPLE bca = TRIPLE(b,c,a);
+                        TRIPLE cab = TRIPLE(c,a,b);
+                        TRIPLE cba = TRIPLE(c,b,a);*/
                         common3[abc]++;
+                        //common3[cba]=common3[cab]=common3[bca]=common3[bac]=common3[acb] = common3[abc];
+                }
+            }
+            for (int na = 0; na < G->numNeighbours(a);na++) {
+                int b = fastnei[a][na];
+                if (b!=x  && !(adjM[x][b])) {
+                    common_x[x][b]++;
                 }
             }
         }
    }
 
-   //this should be changed vvvv
-   int m = G->numEdges();
-   edges = (PAIR*)malloc(m/2*sizeof(PAIR));
-
-   inc = (int**)malloc(G->numNodes()*sizeof(int*));
-   for (int i=0; i < G->numNodes(); i++) inc[i] = (int*)malloc(G->numNodes()*sizeof(int)); //no need, should be g->numNeighbours(x)
-
-   int edge = 0;
-   for (int i = 0; i < G->numNodes(); i++) {
-       for(int j = 0; j < G->numNeighbours(i); j++){
-           int k = fastnei[i][j];
-           if(i < k) {
-               edges[edge] = PAIR(i, k);
-               inc[i][k]=edge; inc[k][i]=edge;
-               edge++;}
-        }
-    }
-
-    m = m/2;
+    m   = m/2;
     tri = (int*)calloc(m,sizeof(int));
     for (int i = 0; i < m; i++) {
         int x=edges[i].a, y=edges[i].b;
@@ -497,28 +482,6 @@ void Fase::buildCommonNodes(){
             else { yi++; }
         }
      }
-
-    common_x = (int**)malloc(G->numNodes()*sizeof(int*));
-    for (int i=0; i < G->numNodes(); i++) common_x[i] = (int*)malloc(G->numNodes()*sizeof(int));
-
-    for (int x = 0; x < G->numNodes(); x++) {
-        frac = 100LL*x/(G->numNodes());
-        if (frac!=frac_prev) {
-            printf("%d%%\r",frac);
-            fflush(stdout);
-            frac_prev=frac;
-        }
-
-        for (int nx1 = 0; nx1 < G->numNeighbours(x); nx1++) {
-            int a = fastnei[x][nx1];
-            for (int na = 0; na < G->numNeighbours(a);na++) {
-                int b = fastnei[a][na];
-                if (b!=x  && !(adjM[x][b])) {
-                    common_x[x][b]++;
-                }
-            }
-       }
-    }
 }
 
 void Fase::solveEquations(){

@@ -44,7 +44,7 @@ class Fase
 
   static char* LSLabel(int w, int subSize);
   static void ExtendSubgraph(int extNum, int subSize);
-  static void GraphletsExtendSubgraph(int extNum, int subSize, int node);
+  static void GraphletsExtendSubgraph(int extNum, int node);
 
  public:
   static int typeLabel;
