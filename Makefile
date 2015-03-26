@@ -3,12 +3,11 @@ CC=g++
 
 # CFLAGS= -Wall -Wno-write-strings -O0 -g
 #CFLAGS= -w -Wno-write-strings -O3 -g
-CFLAGS= -w -Wno-write-strings -O3 -std=c++11
+CFLAGS= -w -Wno-write-strings -O3 -std=c++11 -g
 
 SRC =                   	\
 	Fase.cpp 		\
 	Timer.cpp		\
-	GTrie.cpp		\
 	GraphMatrix.cpp		\
 	Graphlets5.cpp		\
 	GraphList.cpp		\

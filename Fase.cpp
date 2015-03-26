@@ -34,16 +34,16 @@ short **Fase::extCpy;
 char Fase::globStr[MAXS];
 char Fase::s[20 * 20 + 1];
 long long int Fase::count[50];
-int Fase::type[MAXGRAPHS];
+long long int **Fase::type;
 int Fase::clique[6] = {0, 0, 1, 3, 31, 511};
 int Fase::cliqueCount;
 
 //int types[MAXGRAPHS];
 int Fase::graphlets[30];
-long long int Fase::orbits[73];
+long long int **Fase::orbits;
 
 
-int mapLabelToGraph[32] = {-1, 5, 12, 6,-1,-1,-1,-1,-1, 1,-1,
+int mapLabelToGraph[32] = {-1, 12, 5, 6,-1,-1,-1,-1,-1, 1,-1,
                             2, 7, 4,-1, 3,-1,15,19,16,21,
                            18,20,17,-1, 8,-1, 9,14,11,-1,
                            10};
@@ -52,7 +52,7 @@ int mapGraphToGraphlet[22] = {-1, 4, 6, 7, 6, 1, 2, 3, 6, 7, 8,
                            7, 1,-1, 6, 3, 6, 7, 5, 4, 6,
                            3};
 
-int mapGraphletToOrbits[22][4] = {{-1,-1,-1,-1},{7,6,6,6}, {11,10,9,10}, {13,12,12,13}, {11,9,10,10}, {1, 2, 1, -1}, {3, 3, 3, -1}, {5,4,5,4},
+int mapGraphToOrbits[22][4] = {{-1,-1,-1,-1},{7,6,6,6}, {11,10,9,10}, {13,12,12,13}, {11,9,10,10}, {1, 2, 1, -1}, {3, 3, 3, -1}, {5,4,5,4},
                                   {11,10,10,9}, {13,13,12,12}, {14,14,14,14}, {13,12,13,12}, {2, 1, 1, -1}, {-1,-1,-1,-1}, {10,10,11,9},
                                   {5,5,4,4}, {10,11,9,10}, {12,13,12,13}, {8,8,8,8}, {6,7,6,6},
                                   {11,9,10,10}, {4,5,5,4}};
@@ -148,12 +148,19 @@ void Fase::GraphletsCount(Graph *_G, int _K)
   graphSize = G->numNodes();
   cliqueCount = 0;
   memset(count, 0, sizeof count);
-  memset(type, 0, sizeof type);
+  //memset(type, 0, sizeof type);
   int i, j, extNum = 0;
   extCpy = new short*[K];
 
   for (i = 0; i < K; i++)
     extCpy[i] = new short[graphSize];
+
+
+  type = (long long int**)malloc(G->numNodes()*sizeof(long long int*));
+  for (int i=0; i < G->numNodes(); i++) type[i] = (long long int*)malloc(MAXGRAPHS*sizeof(long long int));
+
+  orbits = (long long int**)malloc(G->numNodes()*sizeof(long long int*));
+  for (int i=0; i < G->numNodes(); i++) orbits[i] = (long long int*)malloc(73*sizeof(long long int));
 
   /*
   memset(types, 0, sizeof types);
@@ -168,17 +175,20 @@ void Fase::GraphletsCount(Graph *_G, int _K)
     int *nei   = G->arrayNeighbours(i);
     int neiNum = G->numNeighbours(i);
 
-    orbits[0]   += neiNum;
+    orbits[i][0] = neiNum;
 
     extNum = 0;
     for (j = 0; j < neiNum; j++)
       if (nei[j] > i)
         extCpy[0][extNum++] = nei[j];
     GraphletsExtendSubgraph(extNum, 0);
+
+    solveEquations(i);
+    calcOrbitFrequency(i);
   }
 
-  solveEquations();
-  calcOrbitFrequency();
+  //solveEquations();
+  //calcOrbitFrequency();
   //calcGraphletFrequency();
 
   //fclose(typeFile);
@@ -252,12 +262,20 @@ void Fase::GraphletsExtendSubgraph(int extNum, int node)
 
       bool *p = adjM[exti2];
       for (int j2 = 0; j2 < 2; j2++)
-        nm += ((int)(*(p + sub[j2])) << j2);
+        nm |= ((int)(*(p + sub[j2])) << j2);
 
-      int myType = (node2 << 2) + nm;
-      type[myType]++;
+      int myType = (node2 << 2) | nm;
+      graph    = mapLabelToGraph[myType];
+      graphlet = mapGraphToGraphlet[graph];
+
+      int* orbitsandstuff = mapGraphToOrbits[graph];
 
       sub[2] = exti2;
+
+      orbits[sub[0]][orbitsandstuff[0]]++;
+      orbits[sub[1]][orbitsandstuff[1]]++;
+      orbits[sub[2]][orbitsandstuff[2]]++;
+
 
       // K = 4
       int node3   = myType;
@@ -270,18 +288,25 @@ void Fase::GraphletsExtendSubgraph(int extNum, int node)
         exti3  = extCpy[2][i3];
         sub[3] = exti3;
 
+
         int nm = 0;
         bool *p = adjM[exti3];
-        for (int j3 = 0; j3 < 3; j3++)
-          nm += ((int)(*(p + sub[j3])) << j3);
+        //for (int j3 = 0; j3 < 3; j3++)
+          nm |= ((int)(*(p + sub[0]))) | ((int)(*(p + sub[1])) << 1) | ((int)(*(p + sub[2])) << 2) ;
 
-        int myType = (node3 << 3) + nm;
-        type[myType]++;
+        int myType = (node3 << 3) | nm;
 
         //MotifCount++;
 
         graph    = mapLabelToGraph[myType];
         graphlet = mapGraphToGraphlet[graph];
+
+        int* orbitsandstuff = mapGraphToOrbits[graph];
+
+        orbits[sub[0]][orbitsandstuff[0]]++;
+        orbits[sub[1]][orbitsandstuff[1]]++;
+        orbits[sub[2]][orbitsandstuff[2]]++;
+        orbits[sub[3]][orbitsandstuff[3]]++;
 
         /** Graphlet 3 **/
         if(graphlet == 3){
@@ -295,11 +320,11 @@ void Fase::GraphletsExtendSubgraph(int extNum, int node)
 
               bc = inc[b][c];
 
-              orbits[35] += common_x[a][c] - 1;
-              orbits[34] += common_x[x][c];
-              orbits[27] += tri[bc];
-              orbits[18] += deg[b] - 2;
-              orbits[15] += deg[c] - 1;
+              orbits[x][35] += common_x[a][c] - 1;
+              orbits[x][34] += common_x[x][c];
+              orbits[x][27] += tri[bc];
+              orbits[x][18] += deg[b] - 2;
+              orbits[x][15] += deg[c] - 1;
             }
         }
 
@@ -312,7 +337,7 @@ void Fase::GraphletsExtendSubgraph(int extNum, int node)
 
             x  = sub[mycase[0]];
 
-            orbits[23] += deg[x] - 3;
+            orbits[x][23] += deg[x] - 3;
         }
 
         /** Graphlet 5 **/
@@ -327,8 +352,8 @@ void Fase::GraphletsExtendSubgraph(int extNum, int node)
 
               xa = inc[x][a]; xb = inc[x][b];
 
-              orbits[53] += tri[xa] + tri[xb];
-              orbits[50] += common_x[x][c] - 2;
+              orbits[x][53] += tri[xa] + tri[xb];
+              orbits[x][50] += common_x[x][c] - 2;
             }
         }
 
@@ -340,7 +365,7 @@ void Fase::GraphletsExtendSubgraph(int extNum, int node)
             x  = sub[mycase[0]]; c  = sub[mycase[3]];
             xc = inc[x][c];
 
-            orbits[44] += tri[xc];
+            orbits[x][44] += tri[xc];
 
             // Orbit 10
 
@@ -350,10 +375,10 @@ void Fase::GraphletsExtendSubgraph(int extNum, int node)
             a  = sub[mycase[1]]; b  = sub[mycase[2]]; c  = sub[mycase[3]];
             ab = inc[a][b]; ac = inc[a][c];
 
-            orbits[45] += common2_adjm[b][c] - 1;
-            orbits[39] += tri[ab] + tri[ac] - 2;
-            orbits[31] += deg[a] - 3;
-            orbits[24] += deg[b] + deg[c] - 4;
+            orbits[x][45] += common2_adjm[b][c] - 1;
+            orbits[x][39] += tri[ab] + tri[ac] - 2;
+            orbits[x][31] += deg[a] - 3;
+            orbits[x][24] += deg[b] + deg[c] - 4;
         }
 
         /** Graphlet 7 **/
@@ -367,10 +392,10 @@ void Fase::GraphletsExtendSubgraph(int extNum, int node)
               x  = sub[mycase[0]]; a  = sub[mycase[1]]; b  = sub[mycase[2]]; c  = sub[mycase[3]];
               xa = inc[x][a]; xb = inc[x][b]; xc = inc[x][c];
 
-              orbits[68] += common3_get(TRIPLE(a,b,c)) - 1;
-              orbits[64] += common2_adjm[b][c] - 2;
-              orbits[61] += tri[xb] + tri[xc] - 2;
-              orbits[55] += tri[xa] - 2;
+              orbits[x][68] += common3_get(TRIPLE(a,b,c)) - 1;
+              orbits[x][64] += common2_adjm[b][c] - 2;
+              orbits[x][61] += tri[xb] + tri[xc] - 2;
+              orbits[x][55] += tri[xa] - 2;
             }
 
             // Orbit 12
@@ -392,9 +417,10 @@ void Fase::GraphletsExtendSubgraph(int extNum, int node)
             for (int l = 0; fl && l < 3; l++)
               fl &= ((sub[l] >= eEj3) & (int)*(p + sub[l]));
 
-            orbits[72] += fl * 5;
+            orbits[x][72] += fl * 5;
            }
            // Orbit 14
+
            ncases = 4; //Graphlets5::getNCases(graph, 14);
 
            for(int i = 0; i < ncases; i++){
@@ -404,9 +430,9 @@ void Fase::GraphletsExtendSubgraph(int extNum, int node)
 
              xa = inc[x][a]; xb = inc[x][b]; xc = inc[x][c];
 
-             orbits[70] += common3_get(TRIPLE(a, b, c)) - 1;
-             orbits[67] += tri[xa] + tri[xb] + tri[xc] - 6;
-             orbits[58] += deg[x] - 3;
+             orbits[x][70] += common3_get(TRIPLE(a, b, c)) - 1;
+             orbits[x][67] += tri[xa] + tri[xb] + tri[xc] - 6;
+             orbits[x][58] += deg[x] - 3;
            }
         }
        }
@@ -484,123 +510,123 @@ void Fase::buildCommonNodes(){
      }
 }
 
-void Fase::solveEquations(){
-    orbits[70] = (orbits[70]-4*orbits[72]);
-    orbits[68] = (orbits[68]-3*orbits[70]);
-    orbits[67] = (orbits[67]-12*orbits[72]-6*orbits[70]);
-    orbits[64] = (orbits[64]-3*orbits[70]-1*orbits[68]-1*orbits[68]);
-    orbits[61] = (orbits[61]-6*orbits[70]-2*orbits[68]-2*orbits[67])/2;
-    orbits[58] = (orbits[58]-4*orbits[72]-3*orbits[70]-1*orbits[67]);
-    orbits[55] = (orbits[55]-3*orbits[70]-2*orbits[67])/3;
-    orbits[53] = (orbits[53]-2*orbits[68]-2*orbits[64]-2*orbits[64]);
-    orbits[50] = (orbits[50]-1*orbits[68]-2*orbits[64])/3;
-    orbits[45] = (orbits[45]-1*orbits[67]-1*orbits[64]-3*orbits[58]);
-    orbits[44] = (orbits[44]-1*orbits[67]-2*orbits[61])/4;
-    orbits[39] = (orbits[39]-2*orbits[67]-2*orbits[61]-6*orbits[58])/2;
-    orbits[35] = (orbits[35]-2*orbits[61]-1*orbits[53]-2*orbits[45])/2;
-    orbits[34] = (orbits[34]-2*orbits[61]-2*orbits[53])/2;
-    orbits[31] = (orbits[31]-1*orbits[67]-2*orbits[61]-3*orbits[58]-4*orbits[44]-2*orbits[39]);
-    orbits[27] = (orbits[27]-2*orbits[61]-1*orbits[53]-2*orbits[45])/2;
-    orbits[24] = (orbits[24]-2*orbits[67]-2*orbits[64]-2*orbits[61]-6*orbits[58]-1*orbits[53]-2*orbits[45]-2*orbits[39]);
-    orbits[23] = (orbits[23]-1*orbits[55]-1*orbits[39]-1*orbits[31])/4;
-    orbits[18] = (orbits[18]-2*orbits[61]-1*orbits[53]-4*orbits[45]-2*orbits[35]-2*orbits[27]-1*orbits[24])/2;
-    orbits[15] = (orbits[15]-2*orbits[61]-2*orbits[53]-2*orbits[45]-2*orbits[35]-2*orbits[34]-2*orbits[27]);
+void Fase::solveEquations(int x){
+    orbits[x][70] = (orbits[x][70]-4*orbits[x][72]);
+        orbits[x][68] = (orbits[x][68]-3*orbits[x][70]);
+        orbits[x][67] = (orbits[x][67]-12*orbits[x][72]-6*orbits[x][70]);
+        orbits[x][64] = (orbits[x][64]-3*orbits[x][70]-1*orbits[x][68]-1*orbits[x][68]);
+        orbits[x][61] = (orbits[x][61]-6*orbits[x][70]-2*orbits[x][68]-2*orbits[x][67])/2;
+        orbits[x][58] = (orbits[x][58]-4*orbits[x][72]-3*orbits[x][70]-1*orbits[x][67]);
+        orbits[x][55] = (orbits[x][55]-3*orbits[x][70]-2*orbits[x][67])/3;
+        orbits[x][53] = (orbits[x][53]-2*orbits[x][68]-2*orbits[x][64]-2*orbits[x][64]);
+        orbits[x][50] = (orbits[x][50]-1*orbits[x][68]-2*orbits[x][64])/3;
+        orbits[x][45] = (orbits[x][45]-1*orbits[x][67]-1*orbits[x][64]-3*orbits[x][58]);
+        orbits[x][44] = (orbits[x][44]-1*orbits[x][67]-2*orbits[x][61])/4;
+        orbits[x][39] = (orbits[x][39]-2*orbits[x][67]-2*orbits[x][61]-6*orbits[x][58])/2;
+        orbits[x][35] = (orbits[x][35]-2*orbits[x][61]-1*orbits[x][53]-2*orbits[x][45])/2;
+        orbits[x][34] = (orbits[x][34]-2*orbits[x][61]-2*orbits[x][53])/2;
+        orbits[x][31] = (orbits[x][31]-1*orbits[x][67]-2*orbits[x][61]-3*orbits[x][58]-4*orbits[x][44]-2*orbits[x][39]);
+        orbits[x][27] = (orbits[x][27]-2*orbits[x][61]-1*orbits[x][53]-2*orbits[x][45])/2;
+        orbits[x][24] = (orbits[x][24]-2*orbits[x][67]-2*orbits[x][64]-2*orbits[x][61]-6*orbits[x][58]-1*orbits[x][53]-2*orbits[x][45]-2*orbits[x][39]);
+        orbits[x][23] = (orbits[x][23]-1*orbits[x][55]-1*orbits[x][39]-1*orbits[x][31])/4;
+        orbits[x][18] = (orbits[x][18]-2*orbits[x][61]-1*orbits[x][53]-4*orbits[x][45]-2*orbits[x][35]-2*orbits[x][27]-1*orbits[x][24])/2;
+        orbits[x][15] = (orbits[x][15]-2*orbits[x][61]-2*orbits[x][53]-2*orbits[x][45]-2*orbits[x][35]-2*orbits[x][34]-2*orbits[x][27]);
 }
 
 
 
-void Fase::calcOrbitFrequency(){
+void Fase::calcOrbitFrequency(int i){
     int myType, myGraph, freq, k;
 
     for(myType = 0; myType < 32; myType++){
         myGraph = mapLabelToGraph[myType];
         if(myGraph == -1) continue; //should remove -1s
 
-        freq = type[myType];
+        freq = type[i][myType];
 
         graphlets[mapGraphToGraphlet[myGraph]] += freq;
-        for(k = 0; k < K; k++)
-          orbits[mapGraphletToOrbits[myGraph][k]] += freq;
+        //for(k = 0; k < K; k++)
+          //orbits[i][mapGraphToOrbits[myGraph][k]] += freq;
     }
 
     // G9
-    orbits[16] = orbits[15];
-    orbits[17] = orbits[15]/2;
+    orbits[i][16] = orbits[i][15];
+        orbits[i][17] = orbits[i][15]/2;
 
-    // G10
-    orbits[19] = orbits[18] * 2;
-    orbits[20] = orbits[18];
-    orbits[21] = orbits[18];
+        // G10
+        orbits[i][19] = orbits[i][18] * 2;
+        orbits[i][20] = orbits[i][18];
+        orbits[i][21] = orbits[i][18];
 
-    // G11
-    orbits[22] = orbits[23] * 4;
+        // G11
+        orbits[i][22] = orbits[i][23] * 4;
 
-    // G12
-    orbits[25] = orbits[24]/2;
-    orbits[26] = orbits[24];
+        // G12
+        orbits[i][25] = orbits[i][24]/2;
+        orbits[i][26] = orbits[i][24];
 
-    // G13
-    orbits[28] = orbits[27];
-    orbits[29] = orbits[27] * 2;
-    orbits[30] = orbits[27];
+        // G13
+        orbits[i][28] = orbits[i][27];
+        orbits[i][29] = orbits[i][27] * 2;
+        orbits[i][30] = orbits[i][27];
 
-    // G14
-    orbits[32] = orbits[31];
-    orbits[33] = orbits[31]/2;
+        // G14
+        orbits[i][32] = orbits[i][31];
+        orbits[i][33] = orbits[i][31]/2;
 
-    // G15
+        // G15
 
-    // G16
-    orbits[36] = orbits[35];
-    orbits[37] = orbits[35] * 2;
-    orbits[38] = orbits[35];
+        // G16
+        orbits[i][36] = orbits[i][35];
+        orbits[i][37] = orbits[i][35] * 2;
+        orbits[i][38] = orbits[i][35];
 
-    // G17
-    orbits[40] = orbits[39] * 2;
-    orbits[41] = orbits[39];
-    orbits[42] = orbits[39];
+        // G17
+        orbits[i][40] = orbits[i][39] * 2;
+        orbits[i][41] = orbits[i][39];
+        orbits[i][42] = orbits[i][39];
 
-    // G18
-    orbits[43] = orbits[44] * 4;
+        // G18
+        orbits[i][43] = orbits[i][44] * 4;
 
-    // G19
-    orbits[46] = orbits[45];
-    orbits[47] = orbits[45];
-    orbits[48] = orbits[45] * 2;
+        // G19
+        orbits[i][46] = orbits[i][45];
+        orbits[i][47] = orbits[i][45];
+        orbits[i][48] = orbits[i][45] * 2;
 
-    // G20
-    orbits[49] = 3*orbits[50]/2;
+        // G20
+        orbits[i][49] = 3*orbits[i][50]/2;
 
-    // G21
-    orbits[51] = orbits[53];
-    orbits[52] = orbits[53]/2;
+        // G21
+        orbits[i][51] = orbits[i][53];
+        orbits[i][52] = orbits[i][53]/2;
 
-    // G22
-    orbits[54] = 3*orbits[55]/2;
+        // G22
+        orbits[i][54] = 3*orbits[i][55]/2;
 
-    // G23
-    orbits[56] = orbits[58];
-    orbits[57] = orbits[58] * 3;
+        // G23
+        orbits[i][56] = orbits[i][58];
+        orbits[i][57] = orbits[i][58] * 3;
 
-    // G24
-    orbits[59] = orbits[61] * 2;
-    orbits[60] = orbits[61] * 2;
+        // G24
+        orbits[i][59] = orbits[i][61] * 2;
+        orbits[i][60] = orbits[i][61] * 2;
 
-    // G25
-    orbits[62] = orbits[64]/2;
-    orbits[63] = orbits[64];
+        // G25
+        orbits[i][62] = orbits[i][64]/2;
+        orbits[i][63] = orbits[i][64];
 
-    // G26
-    orbits[65] = orbits[67]/2;
-    orbits[66] = orbits[67];
+        // G26
+        orbits[i][65] = orbits[i][67]/2;
+        orbits[i][66] = orbits[i][67];
 
-    // G27
-    orbits[69] = orbits[68]/4;
+        // G27
+        orbits[i][69] = orbits[i][68]/4;
 
-    // G28
-    orbits[71] = 3*orbits[70]/2;
+        // G28
+        orbits[i][71] = 3*orbits[i][70]/2;
 }
 
 void Fase::calcGraphletFrequency(){
-    graphlets[0]+= orbits[0]/2;
+    //graphlets[0]+= orbits[0]/2;
 }

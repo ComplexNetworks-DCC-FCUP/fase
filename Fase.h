@@ -24,7 +24,6 @@ Base FaSE implementation
 
 #include "Common.h"
 #include "Graph.h"
-#include "GTrie.h"
 #include "Isomorphism.h"
 #include "Random.h"
 
@@ -52,10 +51,10 @@ class Fase
   static bool directed;
   static int cliqueCount;
   static long long int count[50];
-  static int type[MAXGRAPHS];
+  static long long int **type;
 
   static int graphlets[30];
-  static long long int orbits[73];
+  static long long int** orbits;
 
   static long long int getTypes();
   static long long int getLeafs();
@@ -69,8 +68,8 @@ class Fase
   static void updateEquations(int graph, int* sub);
 
   static void calcGraphletFrequency();
-  static void calcOrbitFrequency();
-  static void solveEquations();
+  static void calcOrbitFrequency(int i);
+  static void solveEquations(int x);
   static void buildCommonNodes();
 };
 

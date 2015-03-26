@@ -193,8 +193,10 @@ void outputGraphlets()
     /*for (int i = 0; i <= 29; i++)
         printf("Graphlets %d: %lld\n", i, Fase::graphlets[i]);*/
 
-    for (int i = 0; i <= 72; i++)
-        printf("Orbits %lld: %lld\n", i, Fase::orbits[i]);
+    /*for (int i = 0; i <= 8; i++){
+        for(int j = 0; j < G->numNodes(); j++)
+            printf("Node%d: Orbits %lld: %lld\n", j, i, Fase::orbits[j][i]);
+    }*/
 
   /*printf("Finished Calculating\n");
   FILE *f = outFile;

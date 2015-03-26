@@ -79,8 +79,6 @@ GraphMatrix.cpp
 GraphMatrix.h
 GraphUtils.cpp
 GraphUtils.h
-GTrie.cpp
-GTrie.h
 Isomorphism.cpp
 Isomorphism.h
 Random.cpp
