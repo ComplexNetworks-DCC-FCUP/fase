@@ -27,10 +27,10 @@ class Random
 {
 
  public:
-  static void init(unsigned int s);
+  static void init(int s);
   static int getInteger(int a, int b);
   static double getDouble();
-  static int testProb(double p);
+  static bool testProb(double p);
 };
 
 #endif

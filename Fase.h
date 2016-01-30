@@ -1,61 +1,44 @@
-/* -------------------------------------------------
-
-//                                                 
-//  88888888888           ad88888ba   88888888888  
-//  88                   d8"     "8b  88           
-//  88                   Y8,          88           
-//  88aaaaa  ,adPPYYba,  `Y8aaaaa,    88aaaaa      
-//  88"""""  ""     `Y8    `"""""8b,  88"""""      
-//  88       ,adPPPPP88          `8b  88           
-//  88       88,    ,88  Y8a     a8P  88           
-//  88       `"8bbdP"Y8   "Y88888P"   88888888888  
-//                                                 
-//
-
-Pedro {Paredes, Ribeiro} - DCC/FCUP
-
-----------------------------------------------------
-Base FaSE implementation
-
----------------------------------------------------- */
-
 #ifndef _FASE_
 #define _FASE_
 
 #include "Common.h"
 #include "Graph.h"
-#include "LSLabeling.h"
-#include "GTrie.h"
-#include "Isomorphism.h"
 #include "Random.h"
+#include "Label.h"
+#include "IGtrie.h"
+#include "Isomorphism.h"
 
-/*! This class implements the basic FaSE subgraph enumeration algorithm */
 class Fase
 {
  private:
-  static int K;
-  static int graphSize;
-  static Graph *G;
-  static int *sub;
-  static int subNum;
-  static char globStr[MAXS];
-  static char s[20 * 20 + 1];
-  static short **extCpy;
-  static char* LSLabel(int w, int subSize);
-  static void ExtendSubgraph(int extNum, int subSize);
+  bool directed;
+  bool sampling;
+  Graph *graph;
+  int K;
+  int motifCount;
+  IGtrie igtrie;
+  map<string, int> canonicalTypes;
+
+  int** vext;
+  int* vextSz;
+  int* vsub;
+  double* sampProb;
+  char sadjM[MAXMOTIF * MAXMOTIF + 1];
+  char nauty_s[MAXMOTIF * MAXMOTIF + 1];
+
+  void reduceCanonicalTypes();
+  void expandEnumeration(int depth, int labelNode, long long int label);
+  void getSubgraphFrequency(pair<long long int, int> element, Isomorphism* iso);
 
  public:
-  static int typeLabel;
-  static long long int MotifCount;
-  static bool directed;
-  static long long int getTypes();
-  static long long int getLeafs();
-  static long long int getNodes();
-  static void destroy();
-  static void listClasses(FILE* f);
-  static void listTree(FILE* f);
-  static void EnumerateSubgraphs(Graph *_G, int _K);
+  Fase(Graph* _g, bool _directed);
+  ~Fase();
 
+  int getTypes();
+  void runCensus(int _K);
+  void initSampling(int sz, double* _sampProb);
+  int getMotifCount() {return motifCount;}
+  vector<pair<int, string> > subgraphCount();
 };
 
 #endif

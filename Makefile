@@ -1,18 +1,17 @@
 EXEC_NAME=FASE
 CC=g++
 
-# CFLAGS= -Wall -Wno-write-strings -O0 -g
-CFLAGS= -w -Wno-write-strings -O3 -g
+CFLAGS= -w -Wno-write-strings -O3 -std=c++11 -g
 
 SRC =                   \
 	Fase.cpp 	\
-	LSLabeling.cpp	\
-	GTrie.cpp	\
-	Timer.cpp	\
-	GraphMatrix.cpp	\
-	GraphList.cpp	\
-	GraphUtils.cpp	\
+	Label.cpp	\
+	IGtrie.cpp	\
 	Isomorphism.cpp	\
+	Timer.cpp	\
+	DynamicGraph.cpp\
+	GraphMatrix.cpp	\
+	GraphUtils.cpp	\
 	Random.cpp	\
 	nauty/nauty.c	\
 	nauty/nautil.c	\

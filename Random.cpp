@@ -20,7 +20,7 @@ Random generator
 
 #include "Random.h"
 
-void Random::init(unsigned int s)
+void Random::init(int s)
 {
   srand(s);
 }
@@ -35,10 +35,8 @@ double Random::getDouble()
   return rand() / (double) RAND_MAX;
 }
 
-int Random::testProb(double p)
+bool Random::testProb(double p)
 {
   if (p > 0.9999999) return 1;
   return (rand() / (double) RAND_MAX) < p;
 }
-
-

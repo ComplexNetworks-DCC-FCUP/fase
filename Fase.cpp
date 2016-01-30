@@ -1,175 +1,160 @@
-/* -------------------------------------------------
-
-//                                                 
-//  88888888888           ad88888ba   88888888888  
-//  88                   d8"     "8b  88           
-//  88                   Y8,          88           
-//  88aaaaa  ,adPPYYba,  `Y8aaaaa,    88aaaaa      
-//  88"""""  ""     `Y8    `"""""8b,  88"""""      
-//  88       ,adPPPPP88          `8b  88           
-//  88       88,    ,88  Y8a     a8P  88           
-//  88       `"8bbdP"Y8   "Y88888P"   88888888888  
-//                                                 
-//
-
-Pedro {Paredes, Ribeiro} - DCC/FCUP
-
-----------------------------------------------------
-Base FaSE implementation
-
----------------------------------------------------- */
-
 #include "Fase.h"
 
-int Fase::K;
-long long int Fase::MotifCount = 0;
-int Fase::typeLabel;
-bool Fase::directed;
-Graph* Fase::G;
-int *Fase::sub;
-int Fase::subNum;
-int Fase::graphSize;
-short **Fase::extCpy;
-char Fase::globStr[MAXS];
-char Fase::s[20 * 20 + 1];
-
-long long int Fase::getTypes()
+Fase::Fase(Graph* _g, bool _directed)
 {
-  return GTrie::getCanonicalNumber();
+  directed = _directed;
+  graph = _g;
+  sampling = false;
+
+  vext = new int*[MAXMOTIF];
+  for (int i = 1; i < MAXMOTIF; i++)
+    vext[i] = new int[graph->numNodes()];
+
+  vextSz = new int[MAXMOTIF];
+  vsub = new int[MAXMOTIF];
+  sampProb = new double[MAXMOTIF];
+
+  Label::init(_g, _directed);
 }
 
-long long int Fase::getLeafs()
+Fase::~Fase()
 {
-  return GTrie::getClassNumber();
+  for (int i = 1; i < MAXMOTIF; i++)
+    delete[] vext[i];
+  delete[] vext;
+  delete[] vextSz;
+  delete[] vsub;
+  delete[] sampProb;
+
+  igtrie.destroy();
 }
 
-long long int Fase::getNodes()
-{
-  return GTrie::getNodeNumber();
-}
-
-void Fase::listTree(FILE* f)
-{
-  return GTrie::listGtrie(f);
-}
-
-void Fase::listClasses(FILE* f)
-{
-  return GTrie::listClasses(f);
-}
-
-/*! Generate the next piece of the LSLabel
-    \param w the newly added vertex*/
-char* Fase::LSLabel(int w, int subSize)
-{
-  return LSLabeling::Label(sub, subSize, w, typeLabel, globStr, directed);
-}
-
-void Fase::destroy()
+void Fase::initSampling(int sz, double* _sampProb)
 {
   int i;
-  GTrie::destroy();
-  delete[] sub;
-  for (i = 0; i < K; i++)
-    delete[] extCpy[i];
-  delete [] extCpy;
+  for (i = 0; i < sz; i++)
+    sampProb[i] = _sampProb[i];
+
+  sampling = true;
 }
 
-/*! List all k-subgraphs in a larger graph
-    \param G the graph to be explored
-    \param K the size of the subgraphs*/
-void Fase::EnumerateSubgraphs(Graph *_G, int _K)
+void Fase::runCensus(int _K)
 {
   K = _K;
-  G = _G;
-  sub = new int[K];
-  graphSize = G->numNodes();
-  GTrie::init();
-  LSLabeling::init(G);
-  int i, j, extNum = 0;
-  extCpy = new short*[K];
+  motifCount = 0;
+  igtrie.init(K);
 
-  for (i = 0; i < K; i++)
-    extCpy[i] = new short[graphSize];
+  for (int i = 0; i < graph->numNodes(); i++)
+    if (!sampling || Random::testProb(sampProb[0]))
+    {
+      vsub[0] = i;
+      int *nei = graph->arrayNeighbours(i);
+      int neiNum = graph->numNeighbours(i);
 
-  for (i = 0; i < graphSize; i++)
-  {
-    sub[0] = i;
-    int *nei = G->arrayNeighbours(i);
-    int neiNum = G->numNeighbours(i);
-    extNum = 0;
-    for (j = 0; j < neiNum; j++)
-      if (nei[j] > i)
-        extCpy[0][extNum++] = nei[j];
-    ExtendSubgraph(extNum, 1);
-  }
-  //  printf("\t\tWith G-Tries:\n");
-  //   printf("Found %d Motifs\n", MotifCount);
-  //  printf("LS-Classes: %lld\n", GTrie::getClassNumber());
-  //  GTrie::listClasses();
-  //  GTrie::listGtrie();
+      vextSz[1] = 0;
+      for (int j = 0; j < neiNum; j++)
+        if (nei[j] > i)
+          vext[1][vextSz[1]++] = nei[j];
+    
+      expandEnumeration(1, 0, 0LL);
+    }
 }
 
-/*! Generates the next node on the Fase-tree
-    \param ext the list of possible next chosen vertices
-    \param extNum the number of elements in ext
-    \param subSize the size of the enumerating subgraph
-    \param v the label of the base vertex*/
-void Fase::ExtendSubgraph(int extNum, int subSize)
+void Fase::expandEnumeration(int depth, int labelNode, long long int label)
 {
-  int i;
-
-  if (subSize == K - 1)
+  if (depth == K - 1)
   {
-    for (i = 0; i < extNum; i++)
-    {
-      int exti = extCpy[subSize - 1][i];
-      GTrie::insert(LSLabel(exti, subSize));
-      sub[subSize] = exti;
-      MotifCount++;
-
-      if (!GTrie::getCurrentLeaf())
+    while (vextSz[depth])
+      if (!sampling || Random::testProb(sampProb[depth]))
       {
-        s[0] = '\0';
-        Isomorphism::canonicalStrNauty(G, sub, s);
-        GTrie::setCanonicalLabel(s);
+        int currentVertex = vext[depth][--vextSz[depth]];
+        long long int clabel = Label::updateLabel(vsub, currentVertex, depth);
+        igtrie.incrementLabel(igtrie.insertLabel(labelNode, clabel, Label::repDigits(depth)), 1);
+
+        motifCount++;
       }
 
-      GTrie::jump();    
-    }
     return;
   }
 
-  int j, o;
-  int extCpyNum;
-  int exti, *eExcl, eExclNum;
-  
-  memcpy(extCpy[subSize], extCpy[subSize - 1], extNum * sizeof(short));
+  int i, j;
+  long long int clabel = label;
+  int clabelNode = labelNode;
 
-  for (i = extNum - 1; i >= 0; i--)
-  {
-    extCpyNum = i;
-    exti = extCpy[subSize - 1][i];
-    eExcl = G->arrayNeighbours(exti);
-    eExclNum = G->numNeighbours(exti);
+  for (i = 0; i < vextSz[depth]; i++)
+    vext[depth + 1][i] = vext[depth][i];
 
-    for (j = 0; j < eExclNum; j++)
+  while (vextSz[depth])
+    if (!sampling || Random::testProb(sampProb[depth]))
     {
-      int eEj = eExcl[j];
-      if (eEj <= sub[0])
-        continue;
-      for (o = 0; o < subSize; o++)
-        if (eEj == sub[o] || G->isConnected(eEj, sub[o]))
-          break;
-      if (o == subSize)
-        extCpy[subSize][extCpyNum++] = eEj;
+      int currentVertex = vext[depth][--vextSz[depth]];
+      vextSz[depth + 1] = vextSz[depth];
+      vsub[depth] = currentVertex;
+
+      int *eExcl = graph->arrayNeighbours(currentVertex);
+      int eExclNum = graph->numNeighbours(currentVertex);
+      
+      for (i = 0; i < eExclNum; i++)
+      {
+        if (eExcl[i] <= vsub[0])
+          continue;
+
+        for (j = 0; j < depth; j++)
+          if (eExcl[i] == vsub[j] || graph->isConnected(eExcl[i], vsub[j]))
+            break;
+
+        if (j == depth)
+          vext[depth + 1][vextSz[depth + 1]++] = eExcl[i];
+      }
+
+      if (depth >= 1)
+      {
+        clabel = Label::updateLabel(vsub, currentVertex, depth);
+        clabelNode = igtrie.insertLabel(labelNode, clabel, Label::repDigits(depth));
+      }
+
+      expandEnumeration(depth + 1, clabelNode, clabel);
     }
+}
 
-    GTrie::insert(LSLabel(exti, subSize));
-    sub[subSize] = exti;
+void Fase::getSubgraphFrequency(pair<long long int, int> element, Isomorphism* iso)
+{
+  Label::fillNautyMatrix(sadjM, K, element.first);
 
-    ExtendSubgraph(extCpyNum, subSize + 1);
- 
-    GTrie::jump();
-  }
+  nauty_s[0] = '\0';
+  iso->canonicalStrNauty(sadjM, nauty_s);
+  string str = string(nauty_s);
+  canonicalTypes[str] += element.second;
+}
+
+void Fase::reduceCanonicalTypes()
+{
+  if (!canonicalTypes.empty())
+    return;
+
+  Isomorphism *iso = new Isomorphism();
+  iso->initNauty(K, directed);
+  for (auto element : igtrie.enumerate(K))
+    getSubgraphFrequency(element, iso);
+  iso->finishNauty();
+}
+
+int Fase::getTypes()
+{
+  reduceCanonicalTypes();
+  return (int)canonicalTypes.size();
+}
+
+vector<pair<int, string> > Fase::subgraphCount()
+{
+  reduceCanonicalTypes();
+
+  vector<pair<int, string> > subgraphVector;
+  for (auto element : canonicalTypes)
+    subgraphVector.push_back(make_pair(element.second, element.first));
+
+  sort(subgraphVector.begin(), subgraphVector.end());
+  reverse(subgraphVector.begin(), subgraphVector.end());
+
+  return subgraphVector;
 }

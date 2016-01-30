@@ -1,23 +1,20 @@
 /* -------------------------------------------------
+      _       _     ___                            
+ __ _| |_ _ _(_)___/ __| __ __ _ _ _  _ _  ___ _ _ 
+/ _` |  _| '_| / -_)__ \/ _/ _` | ' \| ' \/ -_) '_|
+\__, |\__|_| |_\___|___/\__\__,_|_||_|_||_\___|_|  
+|___/                                          
+    
+gtrieScanner: quick discovery of network motifs
+Released under Artistic License 2.0
+(see README and LICENSE)
 
-//                                                 
-//  88888888888           ad88888ba   88888888888  
-//  88                   d8"     "8b  88           
-//  88                   Y8,          88           
-//  88aaaaa  ,adPPYYba,  `Y8aaaaa,    88aaaaa      
-//  88"""""  ""     `Y8    `"""""8b,  88"""""      
-//  88       ,adPPPPP88          `8b  88           
-//  88       88,    ,88  Y8a     a8P  88           
-//  88       `"8bbdP"Y8   "Y88888P"   88888888888  
-//                                                 
-//
+Pedro Ribeiro - CRACS & INESC-TEC, DCC/FCUP
 
-Pedro {Paredes, Ribeiro} - DCC/FCUP
 ----------------------------------------------------
 Partially Abstract Base Graph Class
 
-Adapted from gtrieScanner - http://www.dcc.fc.up.pt/gtries/
-
+Last Update: 11/02/2012
 ---------------------------------------------------- */
 
 #include "Graph.h"
@@ -47,7 +44,7 @@ Graph::Graph(bool a, Graph &g) {
 
   for (i=0; i<g.numNodes(); i++)
     for (j=0; j<g.numNodes(); j++)
-      addEdge(i, j, g.getEdge(i,j));
+    addEdge(i, j, g.getEdge(i,j));
 }
 
 
@@ -56,7 +53,6 @@ Graph::Graph(bool a, Graph &g) {
 // -----------------------------------------------
 
 void Graph::_init() {
-  _adjM = NULL;
   _adjL = NULL;
   _adjLI = NULL;
   _neighbours = NULL;
@@ -75,8 +71,6 @@ void Graph::_createGraph(int num_nodes) {
 
   _delete();
 
-  _adjM = new int*[num_nodes];
-  for (int i=0; i<num_nodes; i++) _adjM[i] = new int[num_nodes];
   _adjL = new list<iPair>[num_nodes];
   _adjLI = new list<iPair>[num_nodes];
   _neighbours = new list<int>[num_nodes];
@@ -91,11 +85,6 @@ void Graph::_createGraph(int num_nodes) {
 }
 
 void Graph::_delete() {
-  if (_adjM!=NULL) {
-    for (int i=0; i<_num_nodes; i++)
-      if (_adjM[i]!=NULL) delete[] _adjM[i];
-    delete[] _adjM;
-  }
   if (_adjL!=NULL) delete[] _adjL;
   if (_adjLI!=NULL) delete[] _adjLI;
   if (_neighbours=NULL) delete[] _neighbours;
@@ -118,71 +107,8 @@ void Graph::zero() {
     _adjL[i].clear();
     _adjLI[i].clear();
     _neighbours[i].clear();
-    for (j=0; j<_num_nodes;j++)
-      _adjM[i][j]=0;
   }
 
-}
-
-void Graph::addEdge(int a, int b, int c) {
-  iPair aux, aux2;
-
-  if (c==0) return;
-  if (_adjM[a][b]) return;
-
-  _adjM[a][b] = c;
-
-  aux.first = b;
-  aux.second = c;
-  _adjL[a].push_back(aux);
-
-  aux2.first = a;
-  aux2.second = c;
-  _adjLI[b].push_back(aux2);
-
-  if (!_adjM[b][a]) {
-    _neighbours[a].push_back(b);
-    _neighbours[b].push_back(a);
-  }
-
-  _out[a]++;
-  _in[b]++;
-
-  _num_edges++;
-}
-
-void Graph::rmEdge(int a, int b, int c) {
-  iPair aux, aux2;
-
-  _adjM[a][b] = 0;
-
-  aux.first = b;
-  aux.second = c;
-  _adjL[a].remove(aux);
-
-  aux2.first = a;
-  aux2.second = c;
-  _adjLI[b].remove(aux);
-
-  if (!_adjM[b][a]) {
-    _neighbours[a].remove(b);
-    _neighbours[b].remove(a);
-  }
-
-  _out[a]--;
-  _in[b]++;
-
-  _num_edges--;
-}
-
-void Graph::rmEdgesNode(int v) {
-  int i;
-
-  for (i=0; i<numNodes(); i++) 
-    if (getEdge(i,v))
-      rmEdge(i,v,getEdge(i,v));
-    if (getEdge(v,i))
-      rmEdge(v,i,getEdge(v,i));
 }
 
 // -----------------------------------------------

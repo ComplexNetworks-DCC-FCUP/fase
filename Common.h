@@ -29,6 +29,7 @@ Common file, contains libraries for all files
 #include <list>
 #include <map>
 #include <math.h>
+#include <unordered_map>
 
 #include <cstdio>
 #include <cstdlib>
@@ -40,7 +41,7 @@ Common file, contains libraries for all files
 
 // Limits for subgraph size
 #define MIN_MOTIF_SIZE  3
-#define MAX_MOTIF_SIZE 50
+#define MAX_MOTIF_SIZE 30
 #define MAXMOTIF 20
 
 #define MAXMAT 10000

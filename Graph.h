@@ -1,23 +1,20 @@
 /* -------------------------------------------------
+      _       _     ___                            
+ __ _| |_ _ _(_)___/ __| __ __ _ _ _  _ _  ___ _ _ 
+/ _` |  _| '_| / -_)__ \/ _/ _` | ' \| ' \/ -_) '_|
+\__, |\__|_| |_\___|___/\__\__,_|_||_|_||_\___|_|  
+|___/                                          
+    
+gtrieScanner: quick discovery of network motifs
+Released under Artistic License 2.0
+(see README and LICENSE)
 
-//                                                 
-//  88888888888           ad88888ba   88888888888  
-//  88                   d8"     "8b  88           
-//  88                   Y8,          88           
-//  88aaaaa  ,adPPYYba,  `Y8aaaaa,    88aaaaa      
-//  88"""""  ""     `Y8    `"""""8b,  88"""""      
-//  88       ,adPPPPP88          `8b  88           
-//  88       88,    ,88  Y8a     a8P  88           
-//  88       `"8bbdP"Y8   "Y88888P"   88888888888  
-//                                                 
-//
+Pedro Ribeiro - CRACS & INESC-TEC, DCC/FCUP
 
-Pedro {Paredes, Ribeiro} - DCC/FCUP
 ----------------------------------------------------
 Partially Abstract Base Graph Class
 
-Adapted from gtrieScanner - http://www.dcc.fc.up.pt/gtries/
-
+Last Update: 11/02/2012
 ---------------------------------------------------- */
 
 #ifndef _GRAPH_
@@ -29,13 +26,9 @@ typedef enum{DIRECTED, UNDIRECTED} GraphType;
 
 class Graph {
  public:
-  virtual bool **adjacencyMatrix() = 0;
-
   virtual ~Graph() {};
 
   virtual void createGraph(int n, GraphType t) = 0; // create graph with n nodes
-                                                    // and type 't'
-
   virtual GraphType type() = 0;           // Graph Type
 
   virtual void zero() = 0;                // remove all connections
@@ -52,7 +45,6 @@ class Graph {
   virtual int nodeOutEdges(int a) = 0;    // nr Edges from node a
   virtual int nodeInEdges(int a) = 0;     // nr Edges to   node a
   virtual int numNeighbours(int a) = 0;   // Nr Neighbours of node a
-  virtual void preProcess() = 0;
 
   virtual void sortNeighbours() = 0;       // All neighbours sorted in increasing order (sort vectors)
   virtual void sortNeighboursArray() = 0;  // All neighbours sorted in increasing order (sort arrays)
@@ -60,39 +52,15 @@ class Graph {
   virtual void makeArrayNeighbours() = 0;  // Create arrays of neighbours and discard vectors
   virtual void makeVectorNeighbours() = 0; // Create vectors of neighbours and discard arrays
 
+  virtual void prepareGraph() = 0;
+
   virtual vector<int> *neighbours(int a) = 0; // Neighbours of node a
   virtual int **matrixNeighbours() = 0;            // Neighbours of node a in array form
   virtual int *arrayNeighbours(int a) = 0;         // Neighbours of node a in array form
   virtual int *arrayNumNeighbours() = 0;           // Numbers of neighbours in array form
   virtual vector<int> *outEdges(int a) = 0;   // Outgoing edges of node a
   virtual vector<int> *inEdges(int a) = 0;    // Ingoing edges of node a
-
-  /*  const int numEdges()             {return _num_edges;}
-  const int getEdge(int i, int j)      {return _adjM[i][j];} 
-  list <iPair> *getEdgesList(int i)    {return &_adjL[i];} 
-  list <iPair> *getEdgesInList(int i)  {return &_adjLI[i];} 
-  list <int>   *getNeighbours(int i)   {return &_neighbours[i];} 
-  const bool hasConn(int i, int j)     {return _adjM[i][j];} 
-  const bool hasConnDual(int i, int j) {return (_adjM[i][j] || _adjM[j][i]);}
-  const int nodeEdges(int i)           {return _out[i];}
-  const int nodeInEdges(int i)         {return _in[i];}
-  const int nodeIOEdges(int i)         {return _out[i]+_in[i];}
-
-  const int *inDegreeSequence()        {return _in_ds;}
-  const int *outDegreeSequence()       {return _out_ds;}
-  const iPair *ioDegreeSequence()      {return _io_ds;}
-
-  void vecEdges(vEdges &v);
-  list<iPair> adjL(int v); 
-
-  int *makeInDegreeSequence();
-  int *makeOutDegreeSequence();
-  iPair *makeIODegreeSequence();*/
-  
-  
-
-  /* --------------------- */
-  
+//  virtual int getTag(int a) = 0;               // Tag of node a
 };
 
 #endif

@@ -1,68 +1,71 @@
 /* -------------------------------------------------
+      _       _     ___                            
+ __ _| |_ _ _(_)___/ __| __ __ _ _ _  _ _  ___ _ _ 
+/ _` |  _| '_| / -_)__ \/ _/ _` | ' \| ' \/ -_) '_|
+\__, |\__|_| |_\___|___/\__\__,_|_||_|_||_\___|_|  
+|___/                                          
+    
+gtrieScanner: quick discovery of network motifs
+Released under Artistic License 2.0
+(see README and LICENSE)
 
-//                                                 
-//  88888888888           ad88888ba   88888888888  
-//  88                   d8"     "8b  88           
-//  88                   Y8,          88           
-//  88aaaaa  ,adPPYYba,  `Y8aaaaa,    88aaaaa      
-//  88"""""  ""     `Y8    `"""""8b,  88"""""      
-//  88       ,adPPPPP88          `8b  88           
-//  88       88,    ,88  Y8a     a8P  88           
-//  88       `"8bbdP"Y8   "Y88888P"   88888888888  
-//                                                 
-//
+Pedro Ribeiro - CRACS & INESC-TEC, DCC/FCUP
+Pedro Paredes - CRACS & INESC-TEC, DCC/FCUP
 
-Pedro {Paredes, Ribeiro} - DCC/FCUP
 ----------------------------------------------------
-Graphs Implementation with Adj. List
+Graphs Implementation with 
 
-Adapted from gtrieScanner - http://www.dcc.fc.up.pt/gtries/
-
+Last Update: 27/09/2014
 ---------------------------------------------------- */
 
-#ifndef _GRAPHLIST_
-#define _GRAPHLIST_
+#ifndef _DYNGRAPH_
+#define _DYNGRAPH_
 
 #include "Graph.h"
-#include "Common.h"
+#include <math.h>
 
-class GraphList : public Graph {
+class DynamicGraph : public Graph {
  private:
   GraphType _type;
-
   int _num_nodes;
   int _num_edges;
-  int _sq_nodes;
+  int _sqrt_nodes;
+  int _log_nodes;
 
   int *_in;
   int *_out;
-  int *_sq_out;
+  int *_hash_out;
   int *_num_neighbours;
-  int *cache_map;
+  int *hybrid_ch;
+//  int *arrayTag;
 
+  bool **_adjM;
   int  **_array_neighbours;
   vector<int> *_adjOut;
   vector<int> *_adjIn;
   vector<int> *_neighbours;
 
   struct l_list;
-  l_list ***hash_map;
+  l_list ***_hashM;
 
+  void _removeVector(vector<int> &v, int b);
+  
   void _init();
   void _delete();
-  void _removeVector(vector<int> &v, int b);
+  void _deleteAux();
 
  public:
-  GraphList();
-  ~GraphList();
+  DynamicGraph();
+  ~DynamicGraph();
 
-  bool **adjacencyMatrix() {return NULL;}
-  
+  bool ready;
+
   void createGraph(int n, GraphType t);
 
   GraphType type() {return _type;}
 
   void zero();
+  void prepareGraph();
 
   int numNodes() {return _num_nodes;}
   int numEdges() {return _num_edges;}
@@ -71,12 +74,11 @@ class GraphList : public Graph {
   void rmEdge(int a, int b);  // remove edge from a to b
 
   bool hasEdge(int a, int b);
-  bool isConnected(int a, int b);
+  bool isConnected(int a, int b) {return hasEdge(a, b) || hasEdge(b, a);}
 
   int nodeOutEdges(int a) {return _out[a];}
   int nodeInEdges(int a)  {return _in[a];}
   int numNeighbours(int a) {return _num_neighbours[a];}
-  void preProcess();
   void sortNeighbours();
   void sortNeighboursArray();
   void makeArrayNeighbours();
@@ -88,8 +90,7 @@ class GraphList : public Graph {
   int *arrayNumNeighbours()      {return _num_neighbours;}
   vector<int> *outEdges(int a)   {return &_adjOut[a];}
   vector<int> *inEdges(int a)    {return &_adjIn[a];}
+//  int DynamicGraph::getTag(int a) { return arrayTag[a]; }
 };
 
 #endif
-
-

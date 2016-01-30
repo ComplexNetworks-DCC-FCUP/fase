@@ -1,23 +1,20 @@
 /* -------------------------------------------------
+      _       _     ___                            
+ __ _| |_ _ _(_)___/ __| __ __ _ _ _  _ _  ___ _ _ 
+/ _` |  _| '_| / -_)__ \/ _/ _` | ' \| ' \/ -_) '_|
+\__, |\__|_| |_\___|___/\__\__,_|_||_|_||_\___|_|  
+|___/                                          
+    
+gtrieScanner: quick discovery of network motifs
+Released under Artistic License 2.0
+(see README and LICENSE)
 
-//                                                 
-//  88888888888           ad88888ba   88888888888  
-//  88                   d8"     "8b  88           
-//  88                   Y8,          88           
-//  88aaaaa  ,adPPYYba,  `Y8aaaaa,    88aaaaa      
-//  88"""""  ""     `Y8    `"""""8b,  88"""""      
-//  88       ,adPPPPP88          `8b  88           
-//  88       88,    ,88  Y8a     a8P  88           
-//  88       `"8bbdP"Y8   "Y88888P"   88888888888  
-//                                                 
-//
+Pedro Ribeiro - CRACS & INESC-TEC, DCC/FCUP
 
-Pedro {Paredes, Ribeiro} - DCC/FCUP
 ----------------------------------------------------
 Graphs Implementation with Adj. Matrix and Adj. List
 
-Adapted from gtrieScanner - http://www.dcc.fc.up.pt/gtries/
-
+Last Update: 11/02/2012
 ---------------------------------------------------- */
 
 #ifndef _GRAPHMATRIX_
@@ -53,6 +50,7 @@ class GraphMatrix : public Graph {
   bool **adjacencyMatrix() {return _adjM;}
 
   void createGraph(int n, GraphType t);
+  void prepareGraph() {}
 
   GraphType type() {return _type;}
 
@@ -70,7 +68,6 @@ class GraphMatrix : public Graph {
   int nodeOutEdges(int a) {return _out[a];}
   int nodeInEdges(int a)  {return _in[a];}
   int numNeighbours(int a) {return _num_neighbours[a];}
-  void preProcess() {return;}
   void sortNeighbours();
   void sortNeighboursArray();
   void makeArrayNeighbours();

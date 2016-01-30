@@ -21,25 +21,14 @@ Adapted from gtrieScanner - http://www.dcc.fc.up.pt/gtries/
 ---------------------------------------------------- */
 
 #include "Isomorphism.h"
-#include "GraphUtils.h"
-
-// Static variables
-setword Isomorphism::workspace[WORKSPACE_SIZE];
-int Isomorphism::n,Isomorphism::m;
-set *Isomorphism::gv;
-graph Isomorphism::g[MAXN*MAXM];
-int Isomorphism::lab[MAXN];
-int Isomorphism::ptn[MAXN];
-int Isomorphism::orbits[MAXN];
-bool Isomorphism::dir;
+#include <stdio.h>
 
 DEFAULTOPTIONS(options);
 statsblk(stats);
-graph mm[MAXN*MAXM];
-
+__thread graphnau mm[MAXN*MAXM];
 
 void Isomorphism::initNauty(int size, bool directed) {
-  n = size;  
+  n = size;
   m = (n + WORDSIZE - 1) / WORDSIZE;
   nauty_check(WORDSIZE,m,n,NAUTYVERSIONID);
   
@@ -57,15 +46,17 @@ void Isomorphism::finishNauty() {
   nautil_freedyn();
 }
 
+void Isomorphism::canonicalStrNauty(std::string v, char *s) {
 
-void Isomorphism::canonicalStrNauty(Graph *myg, int *v, char *s) {
   int i, j, aux;
-  
-  for (i=0; i<n; i++) {
+
+  for (int i=0; i<n; i++) {
     gv = GRAPHROW(g,i,m);
     EMPTYSET(gv,m);
-    for (j=0; j<n; j++)
-      if (myg->hasEdge(v[i], v[j])) ADDELEMENT(gv,j);
+
+    for (int j=0; j<n; j++)
+      if(v[i*n + j] == '1')
+        ADDELEMENT(gv,j);
   }
 
   nauty(g,lab,ptn,NULL,orbits,&options,&stats,

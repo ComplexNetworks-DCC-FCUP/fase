@@ -51,11 +51,17 @@ void GraphUtils::readFileTxt(Graph *g, const char *s, bool dir, bool weight, int
   if (dir) g->createGraph(max, DIRECTED);
   else     g->createGraph(max, UNDIRECTED);
 
-  for (i=0; i<size; i++)
-    if (va[i] != vb[i])
+  for (i=0; i<size; i++) {
+    if (va[i]==vb[i]) {
+//      fprintf(stderr, "Self-Loop on %d ignored\n", va[i]);
+      continue; // discard self loops!
+    }
+    if (g->hasEdge(va[i]-1, vb[i]-1));
+//      fprintf(stderr,"Repeated connection! %d %d\n", va[i], vb[i]);
+    else 
       g->addEdge(va[i]-1, vb[i]-1);
-
-  g->preProcess();
+    if (!dir) g->addEdge(vb[i]-1, va[i]-1);
+  } 
   va.clear();
   vb.clear();
 }
