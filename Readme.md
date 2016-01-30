@@ -14,7 +14,7 @@
 _Pedro {Paredes, Ribeiro} - DCC/FCUP_
 
 ## Version Information
-FaSE Version 0.3 - Launched March 8 2014
+FaSE Version 1.0 - Launched 30 January 2016
 
 ## Compilation and Usage
 To compile the Source Code use the `make` command (at least on Linux).
@@ -57,9 +57,10 @@ should work on other OSs too.
 
 This Source Code was developed along the following articles:
 
-* [ASONAM'2013](http://asonam.cpsc.ucalgary.ca/): Pedro Paredes and Pedro Ribeiro - [Towards a Faster
+* [ASONAM'2013](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=6785718): Pedro Paredes and Pedro Ribeiro - [Towards a Faster
 Network-Centric Subgraph Census](http://dl.acm.org/citation.cfm?doid=2492517.2492535).
-* (Submitted to) [SNAM](https://www.springer.com/computer/database+management+%26+information+retrieval/journal/13278): Pedro Paredes and Pedro Ribeiro - FaSE: Fast Exact and Approximate Subgraph Census
+* [SNAM](https://www.springer.com/computer/database+management+%26+information+retrieval/journal/13278): Pedro Paredes and Pedro Ribeiro - FaSE: Fast Exact and Approximate Subgraph Census
+* [NetSci](http://link.springer.com/chapter/10.1007/978-3-319-28361-6_16): Pedro Paredes and Pedro Ribeiro - Large Scale Graph Representations for Subgraph Census
 
 This software uses the nauty program version 2.4 by Brendan McKay. Therefore, nauty's
 license restrictions apply to the usage of FaSE.
