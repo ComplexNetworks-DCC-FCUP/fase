@@ -53,10 +53,10 @@ void Label::fillNautyMatrix(char* sadjM, int K, long long int mask)
     {
       if (directed)
       {
-        sadjM[i * K + j] =
-          (mask & (1LL << (2 * j + acc))) > 0 ? '1' : '0';
         sadjM[j * K + i] =
-          (mask & (1LL << ((2 * j + 1) + acc))) > 0 ? '1' : '0';
+          ((mask & (1LL << (2 * j + acc))) > 0) ? '1' : '0';
+        sadjM[i * K + j] =
+          ((mask & (1LL << ((2 * j + 1) + acc))) > 0) ? '1' : '0';
         gone += 2;
       }
       else
