@@ -123,6 +123,109 @@ void Fase::expandEnumeration(int depth, int labelNode, long long int label)
   }
 }
 
+void Fase::countAddEdge(int a, int b)
+{
+  runDouble(a, b, -1, 0);
+  runDouble(a, b, 1, 1);
+}
+
+void Fase::countRemoveEdge(int a, int b)
+{
+  runDouble(a, b, -1, 1);
+  runDouble(a, b, 1, 0);
+}
+
+void Fase::runDoble(int a, int b, int increment, int edgeContent)
+{
+  vsub[0] = a;
+  vsub[1] = b;
+  int *nei = graph->arrayNeighbours(a);
+  int neiNum = graph->numNeighbours(a);
+
+  vextSz[2] = 0;
+  for (int j = 0; j < neiNum; j++)
+    if (nei[j] > i)
+      vext[2][vextSz[2]++] = nei[j];
+
+  nei = graph->arrayNeighbours(b);
+  neiNum = graph->numNeighbours(b);
+
+  for (int j = 0; j < neiNum; j++)
+    if (nei[j] > i)
+      vext[2][vextSz[2]++] = nei[j];
+
+  sort(vext[2], vext[2] + vextSz[2]);
+  vextSz[2] = (int)(vext[2] - unique(vext[2], vext[2] + vextSz[2]));
+
+  long long int label = 0;
+
+  if (directed)
+  {
+    label |= edgeContent;
+    label |= (2 * edgeContent);
+  }
+  else
+    label |= egdeContent;
+
+  int labelNode = igtrie.insertLabel(0, label, Label::repDigits(depth));
+
+  expandDouble(increment, 2, labelNode, label);
+}
+
+void Fase::expandDouble(int increment, int depth, int labelNode, long long int label)
+{
+  if (depth == K - 1)
+  {
+    while (vextSz[depth])
+      if (!sampling || Random::testProb(sampProb[depth]))
+      {
+        int currentVertex = vext[depth][--vextSz[depth]];
+        long long int clabel = Label::updateLabel(vsub, currentVertex, depth);
+        igtrie.incrementLabel(igtrie.insertLabel(labelNode, clabel, Label::repDigits(depth)), increment);
+
+        motifCount += increment;
+      }
+
+    return;
+  }
+
+  int i, j;
+  long long int clabel = label;
+  int clabelNode = labelNode;
+
+  for (i = 0; i < vextSz[depth]; i++)
+    vext[depth + 1][i] = vext[depth][i];
+
+  while (vextSz[depth])
+    if (!sampling || Random::testProb(sampProb[depth]))
+    {
+      int currentVertex = vext[depth][--vextSz[depth]];
+      vextSz[depth + 1] = vextSz[depth];
+      vsub[depth] = currentVertex;
+
+      int *eExcl = graph->arrayNeighbours(currentVertex);
+      int eExclNum = graph->numNeighbours(currentVertex);
+      
+      for (i = 0; i < eExclNum; i++)
+      {
+        for (j = 0; j < depth; j++)
+          if (eExcl[i] == vsub[j] || graph->isConnected(eExcl[i], vsub[j]))
+            break;
+
+        if (j == depth)
+          vext[depth + 1][vextSz[depth + 1]++] = eExcl[i];
+      }
+
+      if (depth >= 1)
+      {
+        clabel = Label::updateLabel(vsub, currentVertex, depth);
+        clabelNode = igtrie.insertLabel(labelNode, clabel, Label::repDigits(depth));
+      }
+
+      expandDouble(increment, depth + 1, clabelNode, clabel);
+    }
+}
+
 void Fase::getSubgraphFrequency(pair<long long int, int> element, Isomorphism* iso)
 {
   Label::fillNautyMatrix(sadjM, K, element.first);
