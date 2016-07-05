@@ -28,6 +28,8 @@ class Fase
 
   void reduceCanonicalTypes();
   void expandEnumeration(int depth, int labelNode, long long int label);
+  void runDouble(int a, int b, int increment, int edgeContent); // Temporal update
+  void expandDouble(int increment, int depth, int labelNode, long long int label); // Temporal update
   void getSubgraphFrequency(pair<long long int, int> element, Isomorphism* iso);
 
  public:
@@ -36,6 +38,8 @@ class Fase
 
   int getTypes();
   void runCensus(int _K);
+  void countAddEdge(int a, int b); // Temporal update
+  void countRemoveEdge(int a, int b); // Temporal update
   void initSampling(int sz, double* _sampProb);
   int getMotifCount() {return motifCount;}
   vector<pair<int, string> > subgraphCount();
