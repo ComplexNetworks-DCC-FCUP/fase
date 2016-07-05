@@ -135,7 +135,7 @@ void Fase::countRemoveEdge(int a, int b)
   runDouble(a, b, 1, 0);
 }
 
-void Fase::runDoble(int a, int b, int increment, int edgeContent)
+void Fase::runDouble(int a, int b, int increment, int edgeContent)
 {
   vsub[0] = a;
   vsub[1] = b;
@@ -144,15 +144,13 @@ void Fase::runDoble(int a, int b, int increment, int edgeContent)
 
   vextSz[2] = 0;
   for (int j = 0; j < neiNum; j++)
-    if (nei[j] > i)
-      vext[2][vextSz[2]++] = nei[j];
+    vext[2][vextSz[2]++] = nei[j];
 
   nei = graph->arrayNeighbours(b);
   neiNum = graph->numNeighbours(b);
 
   for (int j = 0; j < neiNum; j++)
-    if (nei[j] > i)
-      vext[2][vextSz[2]++] = nei[j];
+    vext[2][vextSz[2]++] = nei[j];
 
   sort(vext[2], vext[2] + vextSz[2]);
   vextSz[2] = (int)(vext[2] - unique(vext[2], vext[2] + vextSz[2]));
@@ -165,9 +163,9 @@ void Fase::runDoble(int a, int b, int increment, int edgeContent)
     label |= (2 * edgeContent);
   }
   else
-    label |= egdeContent;
+    label |= edgeContent;
 
-  int labelNode = igtrie.insertLabel(0, label, Label::repDigits(depth));
+  int labelNode = igtrie.insertLabel(0, label, Label::repDigits(1));
 
   expandDouble(increment, 2, labelNode, label);
 }
