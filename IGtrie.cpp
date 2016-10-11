@@ -16,10 +16,12 @@ void IGtrie::init(int K)
   labelPaths = (int**) malloc(sizeof(int*) * maxLabels);
   labelLeaf = (int*) malloc(sizeof(int) * maxLabels);
   labelCount = (int*) malloc(sizeof(int) * maxLabels);
+  labelType = (int*) malloc(sizeof(int) * maxLabels);
 
   labelPaths[0] = new int[LB_WORD_SIZE];
   labelLeaf[0] = 1;
   labelCount[0] = 0;
+  labelType[0] = 0;
   memset(labelPaths[0], -1, sizeof(int) * LB_WORD_SIZE);
 }
 
@@ -35,6 +37,7 @@ void IGtrie::destroy()
   free(labelPaths);
   free(labelLeaf);
   free(labelCount);
+  free(labelType);
   numLabels = 0;
   maxLabels = 0;
 }
@@ -45,6 +48,7 @@ void IGtrie::expand()
   labelPaths = (int**) realloc(labelPaths, sizeof(int*) * maxLabels);
   labelLeaf = (int*) realloc(labelLeaf, sizeof(int) * maxLabels);
   labelCount = (int*) realloc(labelCount, sizeof(int) * maxLabels);  
+  labelType = (int*) realloc(labelType, sizeof(int) * maxLabels);
 }
 
 void IGtrie::incrementLabel(int labelNode, int value)
@@ -64,6 +68,7 @@ int IGtrie::insertLabel(int labelNode, long long int label, int digits)
     memset(labelPaths[newNode], -1, sizeof(int) * LB_WORD_SIZE);
     labelPaths[labelNode][label & (LB_WORD_SIZE - 1)] = newNode;
     labelLeaf[newNode] = ((digits <= LB_WORD_LEN) ? digits : 0);
+    labelType[newNode] = 0;
     labelCount[newNode] = 0;
   }
 
@@ -112,4 +117,11 @@ void IGtrie::enumerateFrom(int currentNode, long long int label, long long int p
         enumerateFrom(labelPaths[currentNode][i], label, tmpLabel, tmpSize, remaining);
       }
     }
+}
+
+int IGtrie::markLabel(int node, int type)
+{
+  if (type)
+    labelType[node] = type;
+  return labelType[node];
 }

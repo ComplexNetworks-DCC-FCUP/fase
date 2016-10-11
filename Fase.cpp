@@ -14,6 +14,10 @@ Fase::Fase(Graph* _g, bool _directed)
   vsub = new int[MAXMOTIF];
   sampProb = new double[MAXMOTIF];
 
+  iso = new Isomorphism();
+  canonicalNumber = 1;
+  totalLabel = 0;
+
   Label::init(_g, _directed);
 }
 
@@ -26,6 +30,7 @@ Fase::~Fase()
   delete[] vsub;
   delete[] sampProb;
 
+  iso->finishNauty();
   igtrie.destroy();
 }
 
@@ -40,6 +45,7 @@ void Fase::initSampling(int sz, double* _sampProb)
 
 void Fase::runCensus(int _K)
 {
+  iso->initNauty(_K, directed);
   K = _K;
   motifCount = 0;
   igtrie.init(K);
@@ -139,21 +145,24 @@ void Fase::runDouble(int a, int b, int increment, int edgeContent)
 {
   vsub[0] = a;
   vsub[1] = b;
-  int *nei = graph->arrayNeighbours(a);
-  int neiNum = graph->numNeighbours(a);
+
+  vector<int> neiA = *(graph->neighbours(a));
+  int neiNumA = graph->numNeighbours(a);
+
+  vector<int> neiB = *(graph->neighbours(b));
+  int neiNumB = graph->numNeighbours(b);
 
   vextSz[2] = 0;
-  for (int j = 0; j < neiNum; j++)
-    vext[2][vextSz[2]++] = nei[j];
+  for (int j = 0; j < neiNumA; j++)
+    if (neiA[j] != b)
+      vext[2][vextSz[2]++] = neiA[j];
 
-  nei = graph->arrayNeighbours(b);
-  neiNum = graph->numNeighbours(b);
-
-  for (int j = 0; j < neiNum; j++)
-    vext[2][vextSz[2]++] = nei[j];
+  for (int j = 0; j < neiNumB; j++)
+    if (neiB[j] != a)
+      vext[2][vextSz[2]++] = neiB[j];
 
   sort(vext[2], vext[2] + vextSz[2]);
-  vextSz[2] = (int)(vext[2] - unique(vext[2], vext[2] + vextSz[2]));
+  vextSz[2] = (int)(unique(vext[2], vext[2] + vextSz[2]) - vext[2]);
 
   long long int label = 0;
 
@@ -165,8 +174,9 @@ void Fase::runDouble(int a, int b, int increment, int edgeContent)
   else
     label |= edgeContent;
 
-  int labelNode = igtrie.insertLabel(0, label, Label::repDigits(1));
+  int labelNode = igtrie.insertLabel(0, label, Label::repDigits(edgeContent));
 
+  totalLabel = label;
   expandDouble(increment, 2, labelNode, label);
 }
 
@@ -179,9 +189,22 @@ void Fase::expandDouble(int increment, int depth, int labelNode, long long int l
       {
         int currentVertex = vext[depth][--vextSz[depth]];
         long long int clabel = Label::updateLabel(vsub, currentVertex, depth);
-        igtrie.incrementLabel(igtrie.insertLabel(labelNode, clabel, Label::repDigits(depth)), increment);
+        int cnode = igtrie.insertLabel(labelNode, clabel, Label::repDigits(depth));
+        igtrie.incrementLabel(cnode, increment);
 
-        motifCount += increment;
+        totalLabel <<= Label::repDigits(depth);
+        totalLabel |= clabel;
+
+        if (!igtrie.markLabel(cnode))
+          igtrie.markLabel(cnode, getSubgraphFrequency(make_pair(totalLabel, 0), 1));
+
+        if (igtrie.markLabel(cnode) > 0)
+        {
+          canonicalTypes[igtrie.markLabel(cnode)] += increment;
+          motifCount += increment;
+        }
+
+        totalLabel >>= Label::repDigits(depth);
       }
 
     return;
@@ -201,7 +224,7 @@ void Fase::expandDouble(int increment, int depth, int labelNode, long long int l
       vextSz[depth + 1] = vextSz[depth];
       vsub[depth] = currentVertex;
 
-      int *eExcl = graph->arrayNeighbours(currentVertex);
+      vector<int> eExcl = *(graph->neighbours(currentVertex));
       int eExclNum = graph->numNeighbours(currentVertex);
       
       for (i = 0; i < eExclNum; i++)
@@ -214,24 +237,49 @@ void Fase::expandDouble(int increment, int depth, int labelNode, long long int l
           vext[depth + 1][vextSz[depth + 1]++] = eExcl[i];
       }
 
-      if (depth >= 1)
-      {
-        clabel = Label::updateLabel(vsub, currentVertex, depth);
-        clabelNode = igtrie.insertLabel(labelNode, clabel, Label::repDigits(depth));
-      }
+      clabel = Label::updateLabel(vsub, currentVertex, depth);
+      clabelNode = igtrie.insertLabel(labelNode, clabel, Label::repDigits(depth));
+
+      totalLabel <<= Label::repDigits(depth);
+      totalLabel |= clabel;
 
       expandDouble(increment, depth + 1, clabelNode, clabel);
+
+      totalLabel >>= Label::repDigits(depth);
     }
 }
 
-void Fase::getSubgraphFrequency(pair<long long int, int> element, Isomorphism* iso)
+int Fase::getSubgraphFrequency(pair<long long int, int> element, int testConnected)
 {
   Label::fillNautyMatrix(sadjM, K, element.first);
+
+  if (testConnected)
+  {
+    int cpy[K][K];
+    for (int i = 0; i < K; i++)
+      for (int j = 0; j < K; j++)
+        cpy[i][j] = sadjM[i * K + j] == '1' || sadjM[j * K + j] == '1';
+
+    for (int k = 0; k < K; k++)
+      for (int i = 0; i < K; i++)
+        for (int j = 0; j < K; j++)
+          cpy[i][j] = cpy[i][j] | (cpy[i][k] & cpy[k][j]);
+
+    for (int i = 0; i < K; i++)
+      for (int j = 0; j < K; j++)
+        if (!cpy[i][j])
+          return -1;
+  }
 
   nauty_s[0] = '\0';
   iso->canonicalStrNauty(sadjM, nauty_s);
   string str = string(nauty_s);
-  canonicalTypes[str] += element.second;
+
+  if (canonicalIndices.count(str) == 0)
+    canonicalIndices[str] = canonicalNumber++;
+
+  canonicalTypes[canonicalIndices[str]] += element.second;
+  return canonicalIndices[str];
 }
 
 void Fase::reduceCanonicalTypes()
@@ -239,17 +287,21 @@ void Fase::reduceCanonicalTypes()
   if (!canonicalTypes.empty())
     return;
 
-  Isomorphism *iso = new Isomorphism();
-  iso->initNauty(K, directed);
   for (auto element : igtrie.enumerate(K))
-    getSubgraphFrequency(element, iso);
-  iso->finishNauty();
+    getSubgraphFrequency(element);
 }
 
 int Fase::getTypes()
 {
   reduceCanonicalTypes();
-  return (int)canonicalTypes.size();
+
+  int types = (int)canonicalTypes.size();
+
+  for (auto element : canonicalTypes)
+    if (element.second == 0)
+      types--;
+
+  return types;
 }
 
 vector<pair<int, string> > Fase::subgraphCount()
@@ -257,8 +309,9 @@ vector<pair<int, string> > Fase::subgraphCount()
   reduceCanonicalTypes();
 
   vector<pair<int, string> > subgraphVector;
-  for (auto element : canonicalTypes)
-    subgraphVector.push_back(make_pair(element.second, element.first));
+  for (auto element : canonicalIndices)
+    if (canonicalTypes[element.second] > 0)
+      subgraphVector.push_back(make_pair(canonicalTypes[element.second], element.first));
 
   sort(subgraphVector.begin(), subgraphVector.end());
   reverse(subgraphVector.begin(), subgraphVector.end());

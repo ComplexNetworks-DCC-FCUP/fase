@@ -17,7 +17,11 @@ class Fase
   int K;
   int motifCount;
   IGtrie igtrie;
-  map<string, int> canonicalTypes;
+
+  int canonicalNumber;
+  map<string, int> canonicalIndices;
+  map<int, int> canonicalTypes;
+  long long int totalLabel;
 
   int** vext;
   int* vextSz;
@@ -26,11 +30,13 @@ class Fase
   char sadjM[MAXMOTIF * MAXMOTIF + 1];
   char nauty_s[MAXMOTIF * MAXMOTIF + 1];
 
+  Isomorphism* iso;
+
   void reduceCanonicalTypes();
   void expandEnumeration(int depth, int labelNode, long long int label);
   void runDouble(int a, int b, int increment, int edgeContent); // Temporal update
   void expandDouble(int increment, int depth, int labelNode, long long int label); // Temporal update
-  void getSubgraphFrequency(pair<long long int, int> element, Isomorphism* iso);
+  int getSubgraphFrequency(pair<long long int, int> element, int testConnected = 0);
 
  public:
   Fase(Graph* _g, bool _directed);

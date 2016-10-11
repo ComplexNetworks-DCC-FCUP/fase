@@ -39,6 +39,8 @@ class GraphUtils {
   // Read file 's', with direction 'dir' to graph 'g'
   static void readFileTxt(Graph *g, const char *s, bool dir, bool weight, int base);
 
+  static void readFileTxtTemporal(Graph *g, const char *s, bool dir, bool weight, int base, vector<pair<int, int> >& edgeList);
+
   // Convert adjacency matrix to graph of 'size' nodes
   static void strToGraph(Graph *g, const char *s, int size, bool dir);
 
