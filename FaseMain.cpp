@@ -13,7 +13,7 @@ Graph *G;
 int K = 0;
 double sampProb[MAXMOTIF], prob;
 vector<pair<int, int> > edgeList;
-bool dir = false, detailed = false, draw = false, samp = false, largeScale = false, temporal = false;
+bool dir = false, detailed = false, draw = false, samp = false, largeScale = false, temporal = false, summary = false;
 char ifilename [200];
 char ofilename [200];
 FILE *outFile;
@@ -76,6 +76,12 @@ void read(int argc, char **argv)
       i++;
       strcpy(ifilename, argv[i]);
       check |= (1 << 0);
+      continue;
+    }
+
+    if (argv[i][1] == 's' && argv[i][2] == 'm')
+    {
+      summary = true;
       continue;
     }
 
@@ -216,7 +222,7 @@ void output(Fase* fase, bool verbose)
 
   FILE *f = outFile;
 
-  if (verbose)
+  if (verbose && !summary)
   {
     fprintf(f, "\tOutput:\n");
     fprintf(f, "Network: %s\n", ifilename);
@@ -277,8 +283,10 @@ void finish(Fase* fase)
 
 int main(int argc, char **argv)
 {
-  init();
   read(argc, argv);
+
+  if (!summary)
+    init();
 
   if (K <= 2 || K >= MAXMOTIF)
   {
@@ -289,6 +297,8 @@ int main(int argc, char **argv)
   Random::init(time(NULL));
   Fase* fase = new Fase(G, dir);
   initSamplingProbabilities(fase);
+
+  #define DEBUG 1
 
   if (!temporal)
   {
@@ -307,26 +317,36 @@ int main(int argc, char **argv)
     int tm = 1;
     for (auto edge : edgeList)
     {
-      fprintf(outFile, "Time %d:", tm++);
+      if (!DEBUG)
+        fprintf(outFile, "Time %d:", tm++);
       if (edge.first > 0)
       {
-        fase->countAddEdge(edge.first - 1, edge.second - 1);
         if (!G->hasEdge(edge.first - 1, edge.second - 1))
+        {
+          fase->countAddEdge(edge.first - 1, edge.second - 1);
           G->addEdge(edge.first - 1, edge.second - 1);
+        }
       }
       else
       {
-        fase->countRemoveEdge(-edge.first - 1, edge.second - 1);
         if (G->hasEdge(-edge.first - 1, edge.second - 1))
+        {
+          fase->countRemoveEdge(-edge.first - 1, edge.second - 1);
           G->rmEdge(-edge.first - 1, edge.second - 1);
+        }
       }
 
-      Timer::stop();
-      output(fase, false);
-      fprintf(outFile, "\n");
+      if (!DEBUG)
+      {
+        Timer::stop();
+        output(fase, false);
+        fprintf(outFile, "\n");
+      }
     }
 
     Timer::stop();
+    if (DEBUG)
+      output(fase, true);
   }
 
   finish(fase);
