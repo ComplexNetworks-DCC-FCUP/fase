@@ -12,7 +12,8 @@ using namespace std;
 Graph *G;
 int K = 0;
 double sampProb[MAXMOTIF], prob;
-bool dir = false, detailed = false, draw = false, samp = false, largeScale = false;
+vector<pair<int, int> > edgeList;
+bool dir = false, detailed = false, draw = false, samp = false, largeScale = false, temporal = false;
 char ifilename [200];
 char ofilename [200];
 FILE *outFile;
@@ -36,7 +37,7 @@ void init()
 
 void displayHelp()
 {
-  printf("------------ FaSE Usage --------------\nMain Settings: ./FASE -s <Subgraph Size> -i <input file> [arguments...]\n\n\tAll commands:\n-h : Displays this help information\n-s <Integer> : Subgraph Size\n-i <Filename> : Name of input file (Format in Readme.txt)\n-d : Directed Subgraph (Default undirected)\n-o : Name of output file (Default is stdout)\n-dt : Detailed Result (Displays all subgraph types and occurrences)\n-ls : Use a large scale representation (default is adjacency matrix)\n-z : Use 0-based input (Suitable for input files starting at node 0)\n-p <P1> <P2> ... <Ps> : Sets the sampling probabilities by depth (note that -s must have been selected first)\n-q : Ignore arguments and prompt input\n--------------------------------------\n");
+  printf("------------ FaSE Usage --------------\nMain Settings: ./FASE -s <Subgraph Size> -i <input file> [arguments...]\n\n\tAll commands:\n-h : Displays this help information\n-s <Integer> : Subgraph Size\n-i <Filename> : Name of input file (Format in Readme.txt)\n-d : Directed Subgraph (Default undirected)\n-o : Name of output file (Default is stdout)\n-dt : Detailed Result (Displays all subgraph types and occurrences)\n-ls : Use a large scale representation (default is adjacency matrix)\n-z : Use 0-based input (Suitable for input files starting at node 0)\n-p <P1> <P2> ... <Ps> : Sets the sampling probabilities by depth (note that -s must have been selected first)\n-t : Temporal dataset\n-q : Ignore arguments and prompt input\n--------------------------------------\n");
 }
 
 void read(int argc, char **argv)
@@ -109,6 +110,12 @@ void read(int argc, char **argv)
       continue;
     }
 
+    if (argv[i][1] == 't')
+    {
+      temporal = true;
+      continue;
+    }
+
     if (argv[i][1] == 'q')
     {
       itera = 1;
@@ -131,7 +138,19 @@ void read(int argc, char **argv)
       displayHelp();
       return;
     }
-    GraphUtils::readFileTxt(G, ifilename, dir, false, zeroBased);
+
+    if (temporal && !zeroBased)
+    {
+      printf("Error: zero based datasets not compatible with temporal networks\n");
+      displayHelp();
+      return;
+    }
+
+    if (!temporal)
+      GraphUtils::readFileTxt(G, ifilename, dir, false, zeroBased);
+    else
+      GraphUtils::readFileTxtTemporal(G, ifilename, dir, false, zeroBased, edgeList);
+
     G->sortNeighbours();
     G->makeArrayNeighbours();
     if (ofilename[0] == '0' && ofilename[1] == '\0')
@@ -190,43 +209,52 @@ void initSamplingProbabilities(Fase* fase)
     prob = 1.0;
 }
 
-void output(Fase* fase)
+void output(Fase* fase, bool verbose)
 {
-  printf("Finished Calculating\n");
-  FILE *f = outFile;
-  fprintf(f, "\tOutput:\n");
-  fprintf(f, "Network: %s\n", ifilename);
-  fprintf(f, "Directed: %s\n", dir ? "Yes" : "No");
-  fprintf(f, "Nodes: %d\n", G->numNodes());
-  fprintf(f, "Edges: %d\n", G->numEdges() / (dir ? 1 : 2));
-  fprintf(f, "Subgraph Size: %d\n", K);
-  if (largeScale)
-    fprintf(f, "Graph Representation: Large Scale\n");
-  else
-    fprintf(f, "Graph Representation: Adjacency Matrix\n");
+  if (verbose)
+    printf("Finished Calculating\n");
 
-  t_end = time(0);
-  struct tm *tm_start = localtime(&t_start);
-  fprintf(f, "Start of Computation: %02dh%02dm%02ds %02d/%02d/%02d\n\
+  FILE *f = outFile;
+
+  if (verbose)
+  {
+    fprintf(f, "\tOutput:\n");
+    fprintf(f, "Network: %s\n", ifilename);
+    fprintf(f, "Directed: %s\n", dir ? "Yes" : "No");
+    fprintf(f, "Nodes: %d\n", G->numNodes());
+    fprintf(f, "Edges: %d\n", G->numEdges() / (dir ? 1 : 2));
+    fprintf(f, "Subgraph Size: %d\n", K);
+    if (largeScale)
+      fprintf(f, "Graph Representation: Large Scale\n");
+    else
+      fprintf(f, "Graph Representation: Adjacency Matrix\n");
+
+    t_end = time(0);
+    struct tm *tm_start = localtime(&t_start);
+    fprintf(f, "Start of Computation: %02dh%02dm%02ds %02d/%02d/%02d\n\
 ", tm_start->tm_hour, tm_start->tm_min, tm_start->tm_sec, tm_start->tm_mday, tm_start->tm_mon + 1, 1900 + tm_start->tm_year);
-  struct tm *tm_end   = localtime(&t_end);
-  fprintf(f, "End of Computation: %02dh%02dm%02ds %02d/%02d/%02d\n", tm_end->tm_hour, tm_end->tm_min, tm_end->tm_sec, tm_end->tm_mday, tm_end->tm_mon + 1, 1900 + tm_end->tm_year);
+    struct tm *tm_end   = localtime(&t_end);
+    fprintf(f, "End of Computation: %02dh%02dm%02ds %02d/%02d/%02d\n", tm_end->tm_hour, tm_end->tm_min, tm_end->tm_sec, tm_end->tm_mday, tm_end->tm_mon + 1, 1900 + tm_end->tm_year);
+  }
   
   fprintf(f, "\n\n\tResults:\n");
   fprintf(f, "Subgraph Occurrences: %lld\n", (long long int)(fase->getMotifCount() / prob));
   fprintf(f, "Subgraph Types: %d\n", fase->getTypes());
   fprintf(f, "Computation Time (ms): %0.4lf\n", Timer::elapsed());
   
-  if (fabs(prob - 1.0) <= 10e-7)
-    fprintf(f, "\nExact Enumeration, no Sampling done\n");
-  else
+  if (verbose)
   {
-    fprintf(f, "\n\tSampling Information:\n");
-    fprintf(f, "Percentage of Sampled Subgraphs: %0.2lf\%\n", 100 * prob);
-    fprintf(f, "Percentage by depth:\n");
-    int i;
-    for (i = 0; i < K; i++)
-      fprintf(f, "P[%d]: %0.3lf\%\n", i, 100 * sampProb[i]);
+    if (fabs(prob - 1.0) <= 10e-7)
+      fprintf(f, "\nExact Enumeration, no Sampling done\n");
+    else
+    {
+      fprintf(f, "\n\tSampling Information:\n");
+      fprintf(f, "Percentage of Sampled Subgraphs: %0.2lf\%\n", 100 * prob);
+      fprintf(f, "Percentage by depth:\n");
+      int i;
+      for (i = 0; i < K; i++)
+        fprintf(f, "P[%d]: %0.3lf\%\n", i, 100 * sampProb[i]);
+    }
   }
     
   if (detailed)
@@ -262,11 +290,45 @@ int main(int argc, char **argv)
   Fase* fase = new Fase(G, dir);
   initSamplingProbabilities(fase);
 
-  Timer::start();
-  fase->runCensus(K);
-  Timer::stop();
+  if (!temporal)
+  {
+    Timer::start();
+    fase->runCensus(K);
+    Timer::stop();
 
-  output(fase);
+    output(fase, true);
+  }
+  else
+  {
+    Timer::start();
+
+    fase->runCensus(K);
+
+    int tm = 1;
+    for (auto edge : edgeList)
+    {
+      fprintf(outFile, "Time %d:", tm++);
+      if (edge.first > 0)
+      {
+        fase->countAddEdge(edge.first - 1, edge.second - 1);
+        if (!G->hasEdge(edge.first - 1, edge.second - 1))
+          G->addEdge(edge.first - 1, edge.second - 1);
+      }
+      else
+      {
+        fase->countRemoveEdge(-edge.first - 1, edge.second - 1);
+        if (G->hasEdge(-edge.first - 1, edge.second - 1))
+          G->rmEdge(-edge.first - 1, edge.second - 1);
+      }
+
+      Timer::stop();
+      output(fase, false);
+      fprintf(outFile, "\n");
+    }
+
+    Timer::stop();
+  }
+
   finish(fase);
   
   return 0;

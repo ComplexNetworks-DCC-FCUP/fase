@@ -66,6 +66,35 @@ void GraphUtils::readFileTxt(Graph *g, const char *s, bool dir, bool weight, int
   vb.clear();
 }
 
+void GraphUtils::readFileTxtTemporal(Graph *g, const char *s, bool dir, bool weight, int base, vector<pair<int, int> >& edgeList) {
+
+  FILE *f = fopen(s, "r");
+  if (!f)
+    exit(EXIT_FAILURE);
+
+  int i, a, b, c, max;
+
+  max = 0;
+  while (fscanf(f, "%d %d", &a, &b) == 2)
+  {
+    if (weight) i = fscanf(f, "%d", &c);
+
+    int sign = (a < 0) ? -1 : 1;
+    a = abs(a), b = abs(b);
+    a += 1 - base; b += 1 - base;
+
+    if (a > max) max = a;
+    if (b > max) max = b;
+
+    edgeList.push_back(make_pair(sign * a, b));
+  }
+    
+  fclose(f);
+
+  if (dir) g->createGraph(max, DIRECTED);
+  else     g->createGraph(max, UNDIRECTED);
+}
+
 void GraphUtils::strToGraph(Graph *g, const char *s, int size, bool dir) {
   int i,j;
 

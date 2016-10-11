@@ -14,6 +14,7 @@ class IGtrie
   int** labelPaths;
   int* labelLeaf;
   int* labelCount;
+  int* labelType;
   vector<pair<long long int, int> > enumeration;
 
   void expand();
@@ -29,6 +30,7 @@ class IGtrie
   void incrementLabel(int labelNode, int value);
   int insertLabel(int labelNode, long long int label, int digits);
   vector<pair<long long int, int> > enumerate(int K);
+  int markLabel(int node, int type = 0);
 };
 
 #endif
