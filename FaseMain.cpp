@@ -317,11 +317,12 @@ int main(int argc, char **argv)
     int tm = 1;
     for (auto edge : edgeList)
     {
-      if (!DEBUG)
+      if (DEBUG)
         fprintf(outFile, "Time %d:", tm++);
       if (edge.first > 0)
       {
-        if (!G->hasEdge(edge.first - 1, edge.second - 1))
+        if ((!dir && !G->isConnected(edge.first - 1, edge.second - 1)) || 
+            (dir && !G->hasEdge(edge.first - 1, edge.second - 1)))
         {
           fase->countAddEdge(edge.first - 1, edge.second - 1);
           G->addEdge(edge.first - 1, edge.second - 1);
@@ -329,14 +330,15 @@ int main(int argc, char **argv)
       }
       else
       {
-        if (G->hasEdge(-edge.first - 1, edge.second - 1))
+        if ((!dir && G->isConnected(-edge.first - 1, edge.second - 1)) || 
+            (dir && G->hasEdge(-edge.first - 1, edge.second - 1)))
         {
           fase->countRemoveEdge(-edge.first - 1, edge.second - 1);
           G->rmEdge(-edge.first - 1, edge.second - 1);
         }
       }
 
-      if (!DEBUG)
+      if (DEBUG)
       {
         Timer::stop();
         output(fase, false);
@@ -345,7 +347,7 @@ int main(int argc, char **argv)
     }
 
     Timer::stop();
-    if (DEBUG)
+    if (!DEBUG)
       output(fase, true);
   }
 
