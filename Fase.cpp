@@ -163,12 +163,12 @@ void Fase::runDouble(int a, int b, int increment, int edgeContent)
   if (directed)
   {
     label |= edgeContent;
-    label |= (2 * edgeContent);
+    label |= (2 * (graph->hasEdge(b, a)));
   }
   else
     label |= edgeContent;
 
-  int labelNode = igtrie.insertLabel(0, label, Label::repDigits(edgeContent));
+  int labelNode = igtrie.insertLabel(0, label, Label::repDigits(1));
 
   totalLabel = label;
   expandDouble(increment, 2, labelNode, label);
@@ -252,7 +252,7 @@ int Fase::getSubgraphFrequency(pair<long long int, int> element, int testConnect
     int cpy[K][K];
     for (int i = 0; i < K; i++)
       for (int j = 0; j < K; j++)
-        cpy[i][j] = sadjM[i * K + j] == '1' || sadjM[j * K + j] == '1';
+        cpy[i][j] = sadjM[i * K + j] == '1' || sadjM[j * K + i] == '1';
 
     for (int k = 0; k < K; k++)
       for (int i = 0; i < K; i++)
@@ -311,4 +311,16 @@ vector<pair<int, string> > Fase::subgraphCount()
   reverse(subgraphVector.begin(), subgraphVector.end());
 
   return subgraphVector;
+}
+
+map<string, int> Fase::subgraphList()
+{
+  reduceCanonicalTypes();
+
+  map<string, int> subgraphMap;
+  for (auto element : canonicalIndices)
+    if (canonicalTypes[element.second] > 0)
+      subgraphMap[element.first] = canonicalTypes[element.second];
+
+  return subgraphMap;
 }

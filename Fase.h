@@ -49,6 +49,7 @@ class Fase
   void initSampling(int sz, double* _sampProb);
   int getMotifCount() {return motifCount;}
   vector<pair<int, string> > subgraphCount();
+  map<string, int> subgraphList();
 };
 
 #endif
