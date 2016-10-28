@@ -5,7 +5,7 @@ Fase::Fase(Graph* _g, bool _directed)
   directed = _directed;
   graph = _g;
   sampling = false;
-
+  
   vext = new int*[MAXMOTIF];
   for (int i = 1; i < MAXMOTIF; i++)
     vext[i] = new int[graph->numNodes()];
@@ -25,6 +25,7 @@ Fase::~Fase()
 {
   for (int i = 1; i < MAXMOTIF; i++)
     delete[] vext[i];
+
   delete[] vext;
   delete[] vextSz;
   delete[] vsub;
@@ -151,12 +152,12 @@ void Fase::runDouble(int a, int b, int increment, int edgeContent)
     if (neiA[j] != b)
       vext[2][vextSz[2]++] = neiA[j];
 
+  int prevSize = vextSz[2];
+  sort(vext[2], vext[2] + prevSize);
+  
   for (int j = 0; j < neiNumB; j++)
-    if (neiB[j] != a)
+    if (neiB[j] != a && !binary_search(vext[2], vext[2] + prevSize, neiB[j]))
       vext[2][vextSz[2]++] = neiB[j];
-
-  sort(vext[2], vext[2] + vextSz[2]);
-  vextSz[2] = (int)(unique(vext[2], vext[2] + vextSz[2]) - vext[2]);
 
   long long int label = 0;
 
