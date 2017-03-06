@@ -65,14 +65,17 @@ void Fase::expandEnumeration(int depth, int labelNode, long long int label)
   if (depth == K - 1)
   {
     while (vextSz[depth])
+    {
+      int currentVertex = vext[depth][--vextSz[depth]];
+
       if (!sampling || Random::testProb(sampProb[depth]))
       {
-        int currentVertex = vext[depth][--vextSz[depth]];
         long long int clabel = Label::updateLabel(vsub, currentVertex, depth);
         igtrie.incrementLabel(igtrie.insertLabel(labelNode, clabel, Label::repDigits(depth)), 1);
 
         motifCount++;
       }
+    }
 
     return;
   }
@@ -85,9 +88,11 @@ void Fase::expandEnumeration(int depth, int labelNode, long long int label)
     vext[depth + 1][i] = vext[depth][i];
 
   while (vextSz[depth])
+  {
+    int currentVertex = vext[depth][--vextSz[depth]];
+
     if (!sampling || Random::testProb(sampProb[depth]))
     {
-      int currentVertex = vext[depth][--vextSz[depth]];
       vextSz[depth + 1] = vextSz[depth];
       vsub[depth] = currentVertex;
 
@@ -115,6 +120,7 @@ void Fase::expandEnumeration(int depth, int labelNode, long long int label)
 
       expandEnumeration(depth + 1, clabelNode, clabel);
     }
+  }
 }
 
 void Fase::getSubgraphFrequency(pair<long long int, int> element, Isomorphism* iso)
