@@ -5,7 +5,7 @@ Fase::Fase(Graph* _g, bool _directed)
   directed = _directed;
   graph = _g;
   sampling = false;
-
+  
   vext = new int*[MAXMOTIF];
   for (int i = 1; i < MAXMOTIF; i++)
     vext[i] = new int[graph->numNodes()];
@@ -25,6 +25,7 @@ Fase::~Fase()
 {
   for (int i = 1; i < MAXMOTIF; i++)
     delete[] vext[i];
+
   delete[] vext;
   delete[] vextSz;
   delete[] vsub;
@@ -71,17 +72,14 @@ void Fase::expandEnumeration(int depth, int labelNode, long long int label)
   if (depth == K - 1)
   {
     while (vextSz[depth])
-    {
-      int currentVertex = vext[depth][--vextSz[depth]];
-
       if (!sampling || Random::testProb(sampProb[depth]))
       {
+        int currentVertex = vext[depth][--vextSz[depth]];
         long long int clabel = Label::updateLabel(vsub, currentVertex, depth);
         igtrie.incrementLabel(igtrie.insertLabel(labelNode, clabel, Label::repDigits(depth)), 1);
 
         motifCount++;
       }
-    }
 
     return;
   }
@@ -94,11 +92,9 @@ void Fase::expandEnumeration(int depth, int labelNode, long long int label)
     vext[depth + 1][i] = vext[depth][i];
 
   while (vextSz[depth])
-  {
-    int currentVertex = vext[depth][--vextSz[depth]];
-
     if (!sampling || Random::testProb(sampProb[depth]))
     {
+      int currentVertex = vext[depth][--vextSz[depth]];
       vextSz[depth + 1] = vextSz[depth];
       vsub[depth] = currentVertex;
 
@@ -126,7 +122,6 @@ void Fase::expandEnumeration(int depth, int labelNode, long long int label)
 
       expandEnumeration(depth + 1, clabelNode, clabel);
     }
-  }
 }
 
 void Fase::countAddEdge(int a, int b)
@@ -157,12 +152,12 @@ void Fase::runDouble(int a, int b, int increment, int edgeContent)
     if (neiA[j] != b)
       vext[2][vextSz[2]++] = neiA[j];
 
+  int prevSize = vextSz[2];
+  sort(vext[2], vext[2] + prevSize);
+  
   for (int j = 0; j < neiNumB; j++)
-    if (neiB[j] != a)
+    if (neiB[j] != a && !binary_search(vext[2], vext[2] + prevSize, neiB[j]))
       vext[2][vextSz[2]++] = neiB[j];
-
-  sort(vext[2], vext[2] + vextSz[2]);
-  vextSz[2] = (int)(unique(vext[2], vext[2] + vextSz[2]) - vext[2]);
 
   long long int label = 0;
 
@@ -185,9 +180,11 @@ void Fase::expandDouble(int increment, int depth, int labelNode, long long int l
   if (depth == K - 1)
   {
     while (vextSz[depth])
+    {
+      int currentVertex = vext[depth][--vextSz[depth]];
+
       if (!sampling || Random::testProb(sampProb[depth]))
       {
-        int currentVertex = vext[depth][--vextSz[depth]];
         long long int clabel = Label::updateLabel(vsub, currentVertex, depth);
         int cnode = igtrie.insertLabel(labelNode, clabel, Label::repDigits(depth));
         igtrie.incrementLabel(cnode, increment);
@@ -206,6 +203,7 @@ void Fase::expandDouble(int increment, int depth, int labelNode, long long int l
 
         totalLabel >>= Label::repDigits(depth);
       }
+    }
 
     return;
   }
@@ -218,9 +216,11 @@ void Fase::expandDouble(int increment, int depth, int labelNode, long long int l
     vext[depth + 1][i] = vext[depth][i];
 
   while (vextSz[depth])
+  {
+    int currentVertex = vext[depth][--vextSz[depth]];
+
     if (!sampling || Random::testProb(sampProb[depth]))
     {
-      int currentVertex = vext[depth][--vextSz[depth]];
       vextSz[depth + 1] = vextSz[depth];
       vsub[depth] = currentVertex;
 
@@ -247,6 +247,7 @@ void Fase::expandDouble(int increment, int depth, int labelNode, long long int l
 
       totalLabel >>= Label::repDigits(depth);
     }
+  }
 }
 
 int Fase::getSubgraphFrequency(pair<long long int, int> element, int testConnected)

@@ -298,7 +298,7 @@ int main(int argc, char **argv)
   Fase* fase = new Fase(G, dir);
   initSamplingProbabilities(fase);
 
-  #define DEBUG 1
+  #define DEBUG 0
 
   if (!temporal)
   {
